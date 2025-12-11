@@ -30,10 +30,10 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Language <span class="text-red-500">*</span>
                 </label>
-                <select name="language" required class="form-input" onchange="updateAttachmentOptions(this.value)">
+                <select name="language" required class="form-input" onchange="handleLanguageChange(this.value)" id="languageSelect">
+                    <option value="both" selected>Both (sends 2 emails per recipient)</option>
                     <option value="en">English</option>
                     <option value="fr">French</option>
-                    <option value="both">Both (sends 2 emails per recipient)</option>
                 </select>
             </div>
 
@@ -50,28 +50,56 @@
                 />
             </div>
 
-            <!-- Position -->
-            <div>
+            <!-- Position - Single field for en or fr -->
+            <div id="positionSingle">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Position
                 </label>
                 <input
                     type="text"
                     name="position"
+                    id="positionSingleInput"
                     placeholder="Leave blank for default: 'Instrumentation Engineer' / 'Ingénieur en Instrumentation'"
                     class="form-input"
                 />
             </div>
 
-            <!-- Attachment -->
-            <div id="attachmentContainer">
+            <!-- Position - Dual fields for both -->
+            <div id="positionDual" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Position (English)
+                    </label>
+                    <input
+                        type="text"
+                        name="position_en"
+                        id="positionEnInput"
+                        placeholder="Default: 'Instrumentation Engineer'"
+                        class="form-input"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Position (French)
+                    </label>
+                    <input
+                        type="text"
+                        name="position_fr"
+                        id="positionFrInput"
+                        placeholder="Default: 'Ingénieur en Instrumentation'"
+                        class="form-input"
+                    />
+                </div>
+            </div>
+
+            <!-- Attachment - Single selector -->
+            <div id="attachmentSingle">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Attachment (CV) <span class="text-red-500">*</span>
                 </label>
                 <select name="attachment" required class="form-input" id="attachmentSelect">
-                    <option value="">Select a CV...</option>
                     {% for att in attachments_en %}
-                    <option value="{{ att }}">{{ att }}</option>
+                    <option value="{{ att }}" {% if loop.first %}selected{% endif %}>{{ att }}</option>
                     {% endfor %}
                 </select>
                 <div class="mt-2">
@@ -81,17 +109,78 @@
                 </div>
             </div>
 
-            <!-- Body (Optional Custom) -->
-            <div>
+            <!-- Attachment - Dual selectors for both -->
+            <div id="attachmentDual" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Attachment (CV - English) <span class="text-red-500">*</span>
+                    </label>
+                    <select name="attachment_en" class="form-input" id="attachmentEnSelect">
+                        {% for att in attachments_en %}
+                        <option value="{{ att }}" {% if loop.first %}selected{% endif %}>{{ att }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Attachment (CV - French) <span class="text-red-500">*</span>
+                    </label>
+                    <select name="attachment_fr" class="form-input" id="attachmentFrSelect">
+                        {% for att in attachments_fr %}
+                        <option value="{{ att }}" {% if loop.first %}selected{% endif %}>{{ att }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mt-2">
+                    <button type="button" onclick="showUploadModal()" class="text-sm text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-upload mr-1"></i> Upload new CV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body (Optional Custom) - Single field -->
+            <div id="bodySingle">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Email Body (Optional)
                 </label>
                 <textarea
                     name="body"
+                    id="bodySingleInput"
                     rows="6"
                     placeholder="Leave blank to use default template. Use [Company] and [Position] as placeholders."
                     class="form-input"
                 ></textarea>
+                <p class="mt-1 text-sm text-gray-500">
+                    Placeholders: [Company] will be replaced with company name, [Position] with position title
+                </p>
+            </div>
+
+            <!-- Body (Optional Custom) - Dual fields -->
+            <div id="bodyDual" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Body - English (Optional)
+                    </label>
+                    <textarea
+                        name="body_en"
+                        id="bodyEnInput"
+                        rows="6"
+                        placeholder="Leave blank to use default English template. Use [Company] and [Position] as placeholders."
+                        class="form-input"
+                    ></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Body - French (Optional)
+                    </label>
+                    <textarea
+                        name="body_fr"
+                        id="bodyFrInput"
+                        rows="6"
+                        placeholder="Leave blank to use default French template. Use [Company] and [Position] as placeholders."
+                        class="form-input"
+                    ></textarea>
+                </div>
                 <p class="mt-1 text-sm text-gray-500">
                     Placeholders: [Company] will be replaced with company name, [Position] with position title
                 </p>
@@ -177,18 +266,122 @@ const attachmentsData = {
     fr: {{ attachments_fr | tojson }}
 };
 
-function updateAttachmentOptions(language) {
-    const select = document.getElementById('attachmentSelect');
-    select.innerHTML = '<option value="">Select a CV...</option>';
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load last used attachments from localStorage
+    loadLastUsedAttachments();
 
-    const attachments = language === 'both' ? attachmentsData.en : attachmentsData[language];
+    // Initialize language change handler
+    handleLanguageChange('both'); // Default to both
+});
 
-    attachments.forEach(att => {
+function handleLanguageChange(language) {
+    // Show/hide position fields
+    const positionSingle = document.getElementById('positionSingle');
+    const positionDual = document.getElementById('positionDual');
+
+    // Show/hide body fields
+    const bodySingle = document.getElementById('bodySingle');
+    const bodyDual = document.getElementById('bodyDual');
+
+    // Show/hide attachment fields
+    const attachmentSingle = document.getElementById('attachmentSingle');
+    const attachmentDual = document.getElementById('attachmentDual');
+
+    if (language === 'both') {
+        // Show dual fields, hide single
+        positionSingle.classList.add('hidden');
+        positionDual.classList.remove('hidden');
+
+        bodySingle.classList.add('hidden');
+        bodyDual.classList.remove('hidden');
+
+        attachmentSingle.classList.add('hidden');
+        attachmentDual.classList.remove('hidden');
+
+        // Remove required from single fields
+        document.getElementById('attachmentSelect').removeAttribute('required');
+
+        // Update attachment options for both languages
+        updateAttachmentSelect('en', 'attachmentEnSelect');
+        updateAttachmentSelect('fr', 'attachmentFrSelect');
+    } else {
+        // Show single fields, hide dual
+        positionSingle.classList.remove('hidden');
+        positionDual.classList.add('hidden');
+
+        bodySingle.classList.remove('hidden');
+        bodyDual.classList.add('hidden');
+
+        attachmentSingle.classList.remove('hidden');
+        attachmentDual.classList.add('hidden');
+
+        // Add required back to single field
+        document.getElementById('attachmentSelect').setAttribute('required', 'required');
+
+        // Update attachment options for selected language
+        updateAttachmentSelect(language, 'attachmentSelect');
+    }
+}
+
+function updateAttachmentSelect(language, selectId) {
+    const select = document.getElementById(selectId);
+    const attachments = attachmentsData[language];
+
+    select.innerHTML = '';
+
+    // Get last used attachment for this language
+    const lastUsed = localStorage.getItem(`lastAttachment_${language}`);
+
+    attachments.forEach((att, index) => {
         const option = document.createElement('option');
         option.value = att;
         option.textContent = att;
+
+        // Select first item by default, or last used if available
+        if (lastUsed && att === lastUsed) {
+            option.selected = true;
+        } else if (!lastUsed && index === 0) {
+            option.selected = true;
+        }
+
         select.appendChild(option);
     });
+}
+
+function loadLastUsedAttachments() {
+    // Load last used for English
+    const lastEnAttachment = localStorage.getItem('lastAttachment_en');
+    if (lastEnAttachment) {
+        const enSelect = document.getElementById('attachmentEnSelect');
+        const singleSelect = document.getElementById('attachmentSelect');
+
+        if (enSelect) {
+            Array.from(enSelect.options).forEach(opt => {
+                if (opt.value === lastEnAttachment) opt.selected = true;
+            });
+        }
+        if (singleSelect) {
+            Array.from(singleSelect.options).forEach(opt => {
+                if (opt.value === lastEnAttachment) opt.selected = true;
+            });
+        }
+    }
+
+    // Load last used for French
+    const lastFrAttachment = localStorage.getItem('lastAttachment_fr');
+    if (lastFrAttachment) {
+        const frSelect = document.getElementById('attachmentFrSelect');
+        if (frSelect) {
+            Array.from(frSelect.options).forEach(opt => {
+                if (opt.value === lastFrAttachment) opt.selected = true;
+            });
+        }
+    }
+}
+
+function saveLastUsedAttachment(language, filename) {
+    localStorage.setItem(`lastAttachment_${language}`, filename);
 }
 
 function toggleAdditional() {
@@ -204,11 +397,107 @@ function closeUploadModal() {
     document.getElementById('uploadModal').classList.add('hidden');
 }
 
+// Auto-format website URL
+function formatWebsiteUrl(input) {
+    let url = input.value.trim();
+
+    if (!url) return;
+
+    // Add https:// if no protocol
+    if (!url.match(/^https?:\/\//i)) {
+        url = 'https://' + url;
+    }
+
+    // Add www. if missing (but only if it's not an IP or localhost)
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+
+    if (!hostname.startsWith('www.') &&
+        !hostname.match(/^\\d+\\.\\d+\\.\\d+\\.\\d+$/) &&
+        hostname !== 'localhost' &&
+        !hostname.includes('localhost:')) {
+        urlObj.hostname = 'www.' + hostname;
+    }
+
+    input.value = urlObj.toString();
+}
+
+// Auto-format on blur
+document.addEventListener('DOMContentLoaded', function() {
+    const websiteInput = document.querySelector('input[name="website"]');
+    if (websiteInput) {
+        websiteInput.addEventListener('blur', function() {
+            formatWebsiteUrl(this);
+        });
+    }
+});
+
 // Handle send form submission
 document.getElementById('sendForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(e.target);
+    const formData = new FormData();
+    const language = document.getElementById('languageSelect').value;
+
+    // Get email addresses
+    formData.append('emails', e.target.emails.value);
+    formData.append('language', language);
+
+    // Get company
+    const company = e.target.company.value;
+    if (company) formData.append('company', company);
+
+    // Get position based on language mode
+    if (language === 'both') {
+        const positionEn = document.getElementById('positionEnInput').value;
+        const positionFr = document.getElementById('positionFrInput').value;
+        if (positionEn) formData.append('position_en', positionEn);
+        if (positionFr) formData.append('position_fr', positionFr);
+    } else {
+        const position = document.getElementById('positionSingleInput').value;
+        if (position) formData.append('position', position);
+    }
+
+    // Get attachment based on language mode
+    if (language === 'both') {
+        const attachmentEn = document.getElementById('attachmentEnSelect').value;
+        const attachmentFr = document.getElementById('attachmentFrSelect').value;
+        formData.append('attachment_en', attachmentEn);
+        formData.append('attachment_fr', attachmentFr);
+
+        // Save last used attachments
+        saveLastUsedAttachment('en', attachmentEn);
+        saveLastUsedAttachment('fr', attachmentFr);
+    } else {
+        const attachment = document.getElementById('attachmentSelect').value;
+        formData.append('attachment', attachment);
+
+        // Save last used attachment
+        saveLastUsedAttachment(language, attachment);
+    }
+
+    // Get body based on language mode
+    if (language === 'both') {
+        const bodyEn = document.getElementById('bodyEnInput').value;
+        const bodyFr = document.getElementById('bodyFrInput').value;
+        if (bodyEn) formData.append('body_en', bodyEn);
+        if (bodyFr) formData.append('body_fr', bodyFr);
+    } else {
+        const body = document.getElementById('bodySingleInput').value;
+        if (body) formData.append('body', body);
+    }
+
+    // Get optional fields
+    if (e.target.phone && e.target.phone.value) {
+        formData.append('phone', e.target.phone.value);
+    }
+    if (e.target.website && e.target.website.value) {
+        formData.append('website', e.target.website.value);
+    }
+    if (e.target.notes && e.target.notes.value) {
+        formData.append('notes', e.target.notes.value);
+    }
+
     const submitButton = e.target.querySelector('button[type="submit"]');
 
     submitButton.disabled = true;
@@ -256,12 +545,21 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         if (response.ok) {
             alert('CV uploaded successfully!');
             closeUploadModal();
+
             // Refresh attachment list
             const language = formData.get('language');
             const attachmentResponse = await fetch(`/api/attachments/${language}`);
             const attachmentData = await attachmentResponse.json();
             attachmentsData[language] = attachmentData.attachments.map(a => a.name);
-            updateAttachmentOptions(document.querySelector('select[name="language"]').value);
+
+            // Update the appropriate select
+            const currentLanguage = document.getElementById('languageSelect').value;
+            if (currentLanguage === 'both') {
+                updateAttachmentSelect('en', 'attachmentEnSelect');
+                updateAttachmentSelect('fr', 'attachmentFrSelect');
+            } else {
+                updateAttachmentSelect(currentLanguage, 'attachmentSelect');
+            }
         } else {
             alert('Upload failed: ' + (data.detail || 'Unknown error'));
         }

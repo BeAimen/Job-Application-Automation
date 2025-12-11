@@ -26,7 +26,47 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => alert.remove(), 300);
         }, 5000);
     });
+
+    // Setup website URL auto-formatting
+    const websiteInput = document.querySelector('input[name="website"]');
+    if (websiteInput) {
+        websiteInput.addEventListener('blur', function() {
+            formatWebsiteUrl(this);
+        });
+    }
 });
+
+// Auto-format website URL
+function formatWebsiteUrl(input) {
+    let url = input.value.trim();
+
+    if (!url) return;
+
+    try {
+        // Add https:// if no protocol
+        if (!url.match(/^https?:\/\//i)) {
+            url = 'https://' + url;
+        }
+
+        // Parse URL
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.toLowerCase();
+
+        // Add www. if missing (but only if it's not an IP, localhost, or already has subdomain)
+        if (!hostname.startsWith('www.') &&
+            !hostname.match(/^\\d+\\.\\d+\\.\\d+\\.\\d+$/) &&
+            hostname !== 'localhost' &&
+            !hostname.includes('localhost:') &&
+            hostname.split('.').length === 2) { // Only domain.tld (no subdomain)
+            urlObj.hostname = 'www.' + hostname;
+        }
+
+        input.value = urlObj.toString();
+    } catch (e) {
+        // Invalid URL, leave as is
+        console.log('Invalid URL format:', url);
+    }
+}
 
 // Utility Functions
 function formatDate(dateString) {

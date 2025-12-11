@@ -116,8 +116,14 @@ async def send_application(
         language: str = Form(...),
         company: Optional[str] = Form(None),
         position: Optional[str] = Form(None),
-        attachment: str = Form(...),
+        position_en: Optional[str] = Form(None),
+        position_fr: Optional[str] = Form(None),
+        attachment: Optional[str] = Form(None),
+        attachment_en: Optional[str] = Form(None),
+        attachment_fr: Optional[str] = Form(None),
         body: Optional[str] = Form(None),
+        body_en: Optional[str] = Form(None),
+        body_fr: Optional[str] = Form(None),
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
@@ -145,12 +151,42 @@ async def send_application(
     results = []
 
     for lang in languages:
-        # Get defaults
-        final_position = position if position else get_default_position(lang)
-        final_body_template = body if body else get_default_body(lang)
+        # Get position based on language mode
+        if language == 'both':
+            final_position = position_en if lang == 'en' else position_fr
+        else:
+            final_position = position
+
+        # Use default if not provided
+        if not final_position:
+            final_position = get_default_position(lang)
+
+        # Get body based on language mode
+        if language == 'both':
+            final_body_template = body_en if lang == 'en' else body_fr
+        else:
+            final_body_template = body
+
+        # Use default if not provided
+        if not final_body_template:
+            final_body_template = get_default_body(lang)
+
+        # Get attachment based on language mode
+        if language == 'both':
+            attachment_filename = attachment_en if lang == 'en' else attachment_fr
+        else:
+            attachment_filename = attachment
 
         # Validate attachment
-        attachment_path = attachment_selector.get_attachment_path(lang, attachment)
+        if not attachment_filename:
+            results.append({
+                'language': lang,
+                'status': 'error',
+                'message': f'No attachment selected for {lang}'
+            })
+            continue
+
+        attachment_path = attachment_selector.get_attachment_path(lang, attachment_filename)
         if not attachment_path:
             results.append({
                 'language': lang,
@@ -192,7 +228,7 @@ async def send_application(
 
                 # Update sheet
                 sheets_client.update_application_sent(
-                    app_id, lang, final_body, attachment
+                    app_id, lang, final_body, attachment_filename
                 )
 
                 # Log activity
