@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Application Status - Job Application Automation{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="flex items-center mb-8">
+        <a href="/applications?lang={{ language }}" class="text-blue-600 hover:text-blue-800 mr-4">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Applications
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900">Application Details</h1>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600">
+            <div class="flex items-center justify-between">
+                <div class="text-white">
+                    <h2 class="text-2xl font-bold">{{ application.company }}</h2>
+                    <p class="text-blue-100 mt-1">{{ application.position }}</p>
+                </div>
+                <span class="status-badge-large status-{{ application.status.lower().replace(' ', '-') }}">
+                    {{ application.status }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="px-6 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Contact Information -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+                        <i class="fas fa-address-card mr-2"></i> Contact Information
+                    </h3>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Email</div>
+                        <div class="detail-value">
+                            <a href="mailto:{{ application.email }}" class="text-blue-600 hover:text-blue-800">
+                                {{ application.email }}
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if application.phone %}
+                    <div class="detail-row">
+                        <div class="detail-label">Phone</div>
+                        <div class="detail-value">
+                            <a href="tel:{{ application.phone }}" class="text-blue-600 hover:text-blue-800">
+                                {{ application.phone }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if application.website %}
+                    <div class="detail-row">
+                        <div class="detail-label">Website</div>
+                        <div class="detail-value">
+                            <a href="{{ application.website }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                {{ application.website }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Application Details -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+                        <i class="fas fa-info-circle mr-2"></i> Application Details
+                    </h3>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Application ID</div>
+                        <div class="detail-value font-mono text-sm">{{ application.id }}</div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Sent Date</div>
+                        <div class="detail-value">
+                            {% if application.sent_date %}
+                            {{ application.sent_date[:19] }}
+                            {% else %}
+                            <span class="text-gray-400">Not sent yet</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Follow-ups Sent</div>
+                        <div class="detail-value">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                {{ application.followups }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Next Follow-up</div>
+                        <div class="detail-value">
+                            {% if application.next_followup_date %}
+                            {{ application.next_followup_date[:19] }}
+                            {% else %}
+                            <span class="text-gray-400">N/A</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">CV Attachment</div>
+                        <div class="detail-value">
+                            {% if application.cv %}
+                            <i class="fas fa-file-pdf text-red-500 mr-1"></i> {{ application.cv }}
+                            {% else %}
+                            <span class="text-gray-400">None</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Body -->
+            {% if application.body %}
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">
+                    <i class="fas fa-envelope mr-2"></i> Email Body
+                </h3>
+                <div class="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200">{{ application.body }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Notes -->
+            {% if application.notes %}
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">
+                    <i class="fas fa-sticky-note mr-2"></i> Notes
+                </h3>
+                <div class="bg-yellow-50 rounded-lg p-4 text-sm text-gray-700 border border-yellow-200">{{ application.notes }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
