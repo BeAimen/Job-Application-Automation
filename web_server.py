@@ -25,7 +25,7 @@ def main():
     load_dotenv(dotenv_path=project_root / ".env")
 
     # Configuration
-    host = os.getenv("WEB_HOST", "0.0.0.0")
+    host = os.getenv("WEB_HOST", "localhost")
     port = int(os.getenv("WEB_PORT", "8000"))
     debug = os.getenv("WEB_DEBUG", "true").lower() == "true"
 
