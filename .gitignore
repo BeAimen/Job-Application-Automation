@@ -1,0 +1,94 @@
+# ===============================
+# OS & Editor
+# ===============================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+
+# ===============================
+# Python
+# ===============================
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+env/
+
+# ===============================
+# Build & tooling
+# ===============================
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ===============================
+# Logs & runtime
+# ===============================
+logs/
+*.log
+
+# ===============================
+# Credentials & Secrets (CRITICAL)
+# ===============================
+credentials
+credentials.*
+**/credentials
+**/credentials.*
+
+# ===============================
+# Env files
+# ===============================
+.env
+.env.*
+
+# ===============================
+# Local data & storage
+# ===============================
+data/
+storage/
+local_data/
+*.db
+*.sqlite3
+
+# ===============================
+# Frontend (if any)
+# ===============================
+node_modules/
+dist/
+build/
+
+# ===============================
+# Reports & exports
+# ===============================
+exports/
+reports/
+*.csv
+*.xlsx
+*.pdf
+
+# ===============================
+# Cache & temp
+# ===============================
+.cache/
+.tmp/
+tmp/
+
+# ===============================
+# Docker (optional)
+# ===============================
+.env.docker
+docker-compose.override.yml
+
+# ===============================
+# Misc
+# ===============================
+*.bak
+*.old
