@@ -10,129 +10,192 @@
 </div>
 
 <div class="max-w-4xl">
-    <!-- General Settings -->
-    <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">General Settings</h2>
-        </div>
-        <div class="p-6 space-y-6">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Default Language</label>
-                <select class="form-input max-w-xs">
-                    <option value="both" selected>Both (EN + FR)</option>
-                    <option value="en">English</option>
-                    <option value="fr">French</option>
-                </select>
+    <form id="settingsForm">
+        <!-- General Settings -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">General Settings</h2>
             </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Follow-up Interval (days)</label>
-                <input type="number" value="7" class="form-input max-w-xs">
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                <select class="form-input max-w-xs">
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">Eastern Time</option>
-                    <option value="Europe/Paris">Central European Time</option>
-                </select>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Email Settings -->
-    <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Email Settings</h2>
-        </div>
-        <div class="p-6 space-y-6">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Delay Between Emails (seconds)</label>
-                <input type="number" value="2" class="form-input max-w-xs">
-                <p class="mt-1 text-sm text-gray-500">Recommended: 2-5 seconds to avoid rate limits</p>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Max Retry Attempts</label>
-                <input type="number" value="3" class="form-input max-w-xs">
-            </div>
-            
-            <div class="flex items-center">
-                <input type="checkbox" id="autoFollowup" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <label for="autoFollowup" class="ml-2 text-sm text-gray-700">
-                    Enable automatic follow-ups
-                </label>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Notification Settings -->
-    <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
-        <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Notifications</h2>
-        </div>
-        <div class="p-6 space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="p-6 space-y-6">
                 <div>
-                    <p class="text-sm font-medium text-gray-900">Email Sent Notifications</p>
-                    <p class="text-xs text-gray-500">Get notified when emails are successfully sent</p>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Default Language</label>
+                    <select name="default_language" class="form-input max-w-xs">
+                        <option value="both" selected>Both (EN + FR)</option>
+                        <option value="en">English</option>
+                        <option value="fr">French</option>
+                    </select>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="flex items-center justify-between">
+
                 <div>
-                    <p class="text-sm font-medium text-gray-900">Follow-up Reminders</p>
-                    <p class="text-xs text-gray-500">Remind me when follow-ups are due</p>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Follow-up Interval (days)</label>
+                    <input type="number" name="followup_days" value="7" class="form-input max-w-xs">
                 </div>
-                <label class="switch">
-                    <input type="checkbox" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="flex items-center justify-between">
+
                 <div>
-                    <p class="text-sm font-medium text-gray-900">Error Alerts</p>
-                    <p class="text-xs text-gray-500">Alert me when errors occur</p>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                    <select name="timezone" class="form-input max-w-xs">
+                        <option value="UTC" selected>UTC</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="Europe/Paris">Central European Time</option>
+                    </select>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" checked>
-                    <span class="slider"></span>
-                </label>
             </div>
         </div>
-    </div>
-    
+
+        <!-- Email Settings -->
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Email Settings</h2>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Delay Between Emails (seconds)</label>
+                    <input type="number" name="email_delay" value="2" class="form-input max-w-xs">
+                    <p class="mt-1 text-sm text-gray-500">Recommended: 2-5 seconds to avoid rate limits</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Max Retry Attempts</label>
+                    <input type="number" name="max_retries" value="3" class="form-input max-w-xs">
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="auto_followup" id="autoFollowup" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="autoFollowup" class="ml-2 text-sm text-gray-700">
+                        Enable automatic follow-ups
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Settings Button -->
+        <div class="flex justify-end mb-6">
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save mr-2"></i> Save Settings
+            </button>
+        </div>
+    </form>
+
     <!-- Data Management -->
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Data Management</h2>
         </div>
         <div class="p-6 space-y-4">
-            <button class="btn-secondary w-full justify-center">
+            <button onclick="exportData()" class="btn-secondary w-full justify-center">
                 <i class="fas fa-download mr-2"></i> Export All Data (CSV)
             </button>
-            
-            <button class="btn-secondary w-full justify-center">
+
+            <button onclick="exportAnalytics()" class="btn-secondary w-full justify-center">
                 <i class="fas fa-file-excel mr-2"></i> Export Analytics Report
             </button>
-            
-            <button class="btn-secondary w-full justify-center text-red-600 border-red-300 hover:bg-red-50">
+
+            <button onclick="confirmClearData()" class="btn-secondary w-full justify-center text-red-600 border-red-300 hover:bg-red-50">
                 <i class="fas fa-trash mr-2"></i> Clear All Data
             </button>
         </div>
     </div>
-    
-    <!-- Save Button -->
-    <div class="mt-6 flex justify-end">
-        <button class="btn-primary">
-            <i class="fas fa-save mr-2"></i> Save Settings
-        </button>
-    </div>
 </div>
+
+<script>
+// Save settings
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const submitButton = e.target.querySelector('button[type="submit"]');
+
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+
+    try {
+        const response = await fetch('/api/settings/save', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast('Settings saved successfully', 'success');
+        } else {
+            showToast('Failed to save settings', 'error');
+        }
+    } catch (error) {
+        showToast('Network error: ' + error.message, 'error');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save Settings';
+    }
+});
+
+// Export data as CSV
+async function exportData() {
+    try {
+        const response = await fetch('/api/settings/export', {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Create download
+            const blob = new Blob([data.data], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = data.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showToast('Data exported successfully', 'success');
+        } else {
+            showToast('Failed to export data: ' + data.error, 'error');
+        }
+    } catch (error) {
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+
+// Export analytics report
+function exportAnalytics() {
+    showToast('Analytics export feature coming soon', 'info');
+}
+
+// Confirm clear data
+function confirmClearData() {
+    if (confirm('⚠️ WARNING: This will permanently delete ALL application data. This action cannot be undone. Are you absolutely sure?')) {
+        if (confirm('This is your final confirmation. Type "DELETE" in the next prompt to proceed.')) {
+            const confirmation = prompt('Type "DELETE" to confirm:');
+            if (confirmation === 'DELETE') {
+                clearData();
+            } else {
+                showToast('Data clear cancelled', 'info');
+            }
+        }
+    }
+}
+
+// Clear all data
+async function clearData() {
+    try {
+        const response = await fetch('/api/settings/clear', {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('All data cleared successfully', 'success');
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showToast('Clear data disabled for safety. Manually delete from Google Sheets.', 'warning');
+        }
+    } catch (error) {
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+</script>
 {% endblock %}

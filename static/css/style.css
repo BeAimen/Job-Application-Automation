@@ -1,4 +1,4 @@
-/* JobFlow - Professional SaaS Styling */
+/* JobFlow - Professional SaaS Styling (FIXED) */
 
 /* ===== SIDEBAR NAVIGATION ===== */
 .nav-item {
@@ -27,7 +27,7 @@
     color: #2563eb;
 }
 
-/* ===== STAT CARDS ===== */
+/* ===== STAT CARDS (FIXED - CENTERED ICONS) ===== */
 .stat-card {
     background: white;
     border: 1px solid #e5e7eb;
@@ -49,12 +49,15 @@
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
-    justify-center;
+    justify-content: center;
     flex-shrink: 0;
 }
 
 .stat-icon i {
     font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stat-content {
@@ -71,6 +74,7 @@
     font-size: 1.875rem;
     font-weight: 700;
     color: #111827;
+    line-height: 1;
 }
 
 .stat-change {
@@ -234,6 +238,7 @@
 .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     padding: 0.625rem 1.25rem;
     background: linear-gradient(to right, #2563eb, #1d4ed8);
     color: white;
@@ -242,17 +247,25 @@
     border-radius: 0.5rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     transition: all 0.2s;
+    border: none;
+    cursor: pointer;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background: linear-gradient(to right, #1d4ed8, #1e40af);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
 }
 
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .btn-secondary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     padding: 0.625rem 1.25rem;
     background: white;
     color: #4b5563;
@@ -261,6 +274,7 @@
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     transition: all 0.2s;
+    cursor: pointer;
 }
 
 .btn-secondary:hover {
@@ -326,91 +340,67 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal.hidden {
     display: none;
 }
 
-.modal-overlay {
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content-large {
+.modal-content {
     position: relative;
     background: white;
     border-radius: 0.75rem;
     padding: 2rem;
-    max-width: 48rem;
+    max-width: 32rem;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-/* ===== TOGGLE SWITCH ===== */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 3rem;
-    height: 1.5rem;
+.modal-content-large {
+    max-width: 48rem;
 }
 
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+/* ===== STATUS BADGES ===== */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
 }
 
-.slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background-color: #cbd5e1;
-    transition: 0.4s;
-    border-radius: 1.5rem;
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
 }
 
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 1.125rem;
-    width: 1.125rem;
-    left: 0.1875rem;
-    bottom: 0.1875rem;
-    background-color: white;
-    transition: 0.4s;
-    border-radius: 50%;
+.status-sent {
+    background-color: #d1fae5;
+    color: #065f46;
 }
 
-input:checked + .slider {
-    background-color: #2563eb;
-}
-
-input:checked + .slider:before {
-    transform: translateX(1.5rem);
-}
-
-/* ===== DRAG AND DROP ZONE ===== */
-.drop-zone {
-    border: 2px dashed #d1d5db;
-    border-radius: 0.75rem;
-    padding: 2rem;
-    text-align: center;
-    transition: all 0.2s;
-    cursor: pointer;
-}
-
-.drop-zone:hover {
-    border-color: #2563eb;
-    background-color: #eff6ff;
-}
-
-.drop-zone.dragover {
-    border-color: #2563eb;
+.status-follow-up-sent {
     background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.status-bounced {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-failed {
+    background-color: #fecaca;
+    color: #7f1d1d;
+}
+
+.status-draft {
+    background-color: #e5e7eb;
+    color: #374151;
 }
 
 /* ===== UTILITIES ===== */

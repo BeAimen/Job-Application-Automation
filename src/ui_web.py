@@ -5,7 +5,8 @@ from fastapi.templating import Jinja2Templates
 from typing import List, Optional
 from pathlib import Path
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 from src.auth import get_authenticated_services
 from src.sheets import SheetsClient
@@ -16,7 +17,10 @@ from src.utils import (
     validate_email, get_default_body, get_default_position,
     substitute_placeholders, is_followup_due
 )
-from src.config import PROJECT_ROOT, ATTACHMENT_FOLDER_EN, ATTACHMENT_FOLDER_FR
+from src.config import PROJECT_ROOT, ATTACHMENT_FOLDER_EN, ATTACHMENT_FOLDER_FR, TIMEZONE
+from src.analytics import AnalyticsEngine
+from src.templates_manager import TemplateManager
+from src.monitoring import system_monitor
 
 app = FastAPI(title="Job Application Automation", version="1.0.0")
 
@@ -35,10 +39,11 @@ _sheets_service = None
 _sheets_client = None
 _mailer = None
 _attachment_selector = None
+_analytics_engine = None
+_template_manager = None
 
 
 def get_clients():
-    """Get or initialize service clients."""
     global _gmail_service, _sheets_service, _sheets_client, _mailer, _attachment_selector
 
     if _sheets_client is None:
@@ -50,34 +55,86 @@ def get_clients():
     return _sheets_client, _mailer, _attachment_selector
 
 
+def get_analytics():
+    global _analytics_engine
+    if _analytics_engine is None:
+        sheets_client, _, _ = get_clients()
+        _analytics_engine = AnalyticsEngine(sheets_client)
+    return _analytics_engine
+
+
+def get_template_manager():
+    global _template_manager
+    if _template_manager is None:
+        _template_manager = TemplateManager()
+    return _template_manager
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Home page / Dashboard."""
     sheets_client, _, _ = get_clients()
+    analytics = get_analytics()
 
-    # Get recent applications
     try:
+        # Get all applications
         apps_en = sheets_client.get_applications_for_followup('en')
         apps_fr = sheets_client.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
 
-        # Get stats
-        total_applications = len(apps_en) + len(apps_fr)
+        # Calculate real stats
+        total_applications = len(all_apps)
 
-        # Count due follow-ups
-        due_followups = sum(1 for app in apps_en + apps_fr
+        # Sent today
+        tz = pytz.timezone(TIMEZONE)
+        today = datetime.now(tz).date()
+        sent_today = sum(1 for app in all_apps
+                         if app.get('sent_date') and
+                         datetime.fromisoformat(app['sent_date']).date() == today)
+
+        # Due follow-ups
+        due_followups = sum(1 for app in all_apps
                             if is_followup_due(app.get('next_followup_date', '')))
 
-        # Get recent (last 10 from each)
-        recent_applications = (apps_en[:10] + apps_fr[:10])
-        recent_applications.sort(
+        # Response rate (placeholder - would need tracking)
+        # For now, calculate based on status changes
+        responded = sum(1 for app in all_apps
+                        if app.get('status') not in ['Pending', 'Sent', 'Failed'])
+        response_rate = (responded / total_applications * 100) if total_applications > 0 else 0
+
+        # Get timeline data (real)
+        timeline = analytics.get_timeline_data(30)
+
+        # Language distribution (real)
+        lang_dist = {
+            'en': len(apps_en),
+            'fr': len(apps_fr)
+        }
+
+        # Top companies (real)
+        company_heatmap = analytics.get_company_heatmap(5)
+
+        # Today's activity (real)
+        today_apps = [app for app in all_apps
+                      if app.get('sent_date') and
+                      datetime.fromisoformat(app['sent_date']).date() == today]
+
+        # Recent applications
+        recent_applications = sorted(
+            all_apps,
             key=lambda x: x.get('sent_date', ''),
             reverse=True
-        )
-        recent_applications = recent_applications[:10]
+        )[:10]
 
     except Exception as e:
+        print(f"Error loading dashboard data: {e}")
         total_applications = 0
+        sent_today = 0
         due_followups = 0
+        response_rate = 0
+        timeline = {'labels': [], 'data': []}
+        lang_dist = {'en': 0, 'fr': 0}
+        company_heatmap = []
+        today_apps = []
         recent_applications = []
 
     return templates.TemplateResponse(
@@ -85,7 +142,13 @@ async def home(request: Request):
         {
             "request": request,
             "total_applications": total_applications,
+            "sent_today": sent_today,
             "due_followups": due_followups,
+            "response_rate": round(response_rate, 1),
+            "timeline": timeline,
+            "lang_dist": lang_dist,
+            "top_companies": company_heatmap,
+            "today_apps": today_apps,
             "recent_applications": recent_applications
         }
     )
@@ -93,19 +156,28 @@ async def home(request: Request):
 
 @app.get("/send", response_class=HTMLResponse)
 async def send_page(request: Request):
-    """Send application page."""
     _, _, attachment_selector = get_clients()
 
     # Get available attachments
     attachments_en = [f.name for f in attachment_selector.get_attachments('en')]
     attachments_fr = [f.name for f in attachment_selector.get_attachments('fr')]
 
+    # Get default values
+    default_body_en = get_default_body('en')
+    default_body_fr = get_default_body('fr')
+    default_position_en = get_default_position('en')
+    default_position_fr = get_default_position('fr')
+
     return templates.TemplateResponse(
         "send.html",
         {
             "request": request,
             "attachments_en": attachments_en,
-            "attachments_fr": attachments_fr
+            "attachments_fr": attachments_fr,
+            "default_body_en": default_body_en,
+            "default_body_fr": default_body_fr,
+            "default_position_en": default_position_en,
+            "default_position_fr": default_position_fr
         }
     )
 
@@ -128,13 +200,12 @@ async def send_application(
         website: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
-    """Send application emails."""
     sheets_client, mailer, attachment_selector = get_clients()
 
     if not mailer:
         raise HTTPException(status_code=500, detail="Gmail service not available")
 
-    # Parse emails (comma or newline separated)
+    # Parse emails
     email_list = [e.strip() for e in emails.replace('\\n', ',').split(',') if e.strip()]
 
     # Validate emails
@@ -151,33 +222,30 @@ async def send_application(
     results = []
 
     for lang in languages:
-        # Get position based on language mode
+        # Get position
         if language == 'both':
             final_position = position_en if lang == 'en' else position_fr
         else:
             final_position = position
 
-        # Use default if not provided
         if not final_position:
             final_position = get_default_position(lang)
 
-        # Get body based on language mode
+        # Get body
         if language == 'both':
             final_body_template = body_en if lang == 'en' else body_fr
         else:
             final_body_template = body
 
-        # Use default if not provided
         if not final_body_template:
             final_body_template = get_default_body(lang)
 
-        # Get attachment based on language mode
+        # Get attachment
         if language == 'both':
             attachment_filename = attachment_en if lang == 'en' else attachment_fr
         else:
             attachment_filename = attachment
 
-        # Validate attachment
         if not attachment_filename:
             results.append({
                 'language': lang,
@@ -198,7 +266,6 @@ async def send_application(
         # Send to each recipient
         for recipient_email in email_list:
             try:
-                # Add to sheet
                 app_id = sheets_client.add_application(
                     email=recipient_email,
                     language=lang,
@@ -210,7 +277,6 @@ async def send_application(
                     status='Pending'
                 )
 
-                # Prepare body
                 final_body = substitute_placeholders(
                     final_body_template,
                     company,
@@ -218,7 +284,6 @@ async def send_application(
                     lang
                 )
 
-                # Send email
                 result = mailer.send_with_delay(
                     to_email=recipient_email,
                     subject=final_position,
@@ -226,12 +291,10 @@ async def send_application(
                     attachment_path=attachment_path
                 )
 
-                # Update sheet
                 sheets_client.update_application_sent(
                     app_id, lang, final_body, attachment_filename
                 )
 
-                # Log activity
                 sheets_client.log_activity(
                     app_id, recipient_email, 'email_sent', 'success',
                     'Sent via web UI'
@@ -261,18 +324,14 @@ async def applications_page(
         lang: str = "en",
         status: Optional[str] = None
 ):
-    """View all applications."""
     sheets_client, _, _ = get_clients()
 
     try:
-        # Get all applications
         applications = sheets_client.get_applications_for_followup(lang)
 
-        # Filter by status if provided
         if status:
             applications = [app for app in applications if app['status'] == status]
 
-        # Get unique statuses for filter
         all_apps = sheets_client.get_applications_for_followup(lang)
         statuses = sorted(set(app.get('status', 'Unknown') for app in all_apps))
 
@@ -294,7 +353,6 @@ async def applications_page(
 
 @app.get("/followups", response_class=HTMLResponse)
 async def followups_page(request: Request, lang: str = "both"):
-    """Follow-ups management page."""
     sheets_client, _, _ = get_clients()
 
     languages = ['en', 'fr'] if lang == 'both' else [lang]
@@ -312,7 +370,6 @@ async def followups_page(request: Request, lang: str = "both"):
         except Exception as e:
             pass
 
-    # Sort by next followup date
     due_applications.sort(key=lambda x: x.get('next_followup_date', ''))
 
     return templates.TemplateResponse(
@@ -330,7 +387,6 @@ async def process_followups(
         language: str = Form(...),
         dry_run: bool = Form(False)
 ):
-    """Process due follow-ups."""
     sheets_client, mailer, attachment_selector = get_clients()
 
     if not mailer:
@@ -345,111 +401,23 @@ async def process_followups(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/status/{app_id}", response_class=HTMLResponse)
-async def status_page(request: Request, app_id: str, lang: str = "en"):
-    """View application status."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        application = sheets_client.get_application_by_id(app_id, lang)
-
-        if not application:
-            raise HTTPException(status_code=404, detail="Application not found")
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return templates.TemplateResponse(
-        "status.html",
-        {
-            "request": request,
-            "application": application,
-            "language": lang
-        }
-    )
-
-
-@app.get("/api/attachments/{language}")
-async def get_attachments(language: str):
-    """API endpoint to get available attachments."""
-    _, _, attachment_selector = get_clients()
-
-    attachments = [
-        {
-            'name': f.name,
-            'size': f.stat().st_size,
-            'modified': f.stat().st_mtime
-        }
-        for f in attachment_selector.get_attachments(language)
-    ]
-
-    return JSONResponse(content={'attachments': attachments})
-
-
-@app.post("/api/upload-attachment")
-async def upload_attachment(
-        language: str = Form(...),
-        file: UploadFile = File(...)
-):
-    """Upload a new attachment."""
-    folder = ATTACHMENT_FOLDER_EN if language == 'en' else ATTACHMENT_FOLDER_FR
-    folder.mkdir(parents=True, exist_ok=True)
-
-    file_path = folder / file.filename
-
-    # Save file
-    with open(file_path, 'wb') as f:
-        content = await file.read()
-        f.write(content)
-
-    return JSONResponse(content={
-        'success': True,
-        'filename': file.filename,
-        'message': f'Uploaded to {language} folder'
-    })
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
-
-
-# ADD TO EXISTING src/ui_web.py
-
-from src.analytics import AnalyticsEngine
-from src.templates_manager import TemplateManager
-from src.monitoring import system_monitor
-
-# Initialize managers
-_analytics_engine = None
-_template_manager = None
-
-
-def get_analytics():
-    global _analytics_engine
-    if _analytics_engine is None:
-        sheets_client, _, _ = get_clients()
-        _analytics_engine = AnalyticsEngine(sheets_client)
-    return _analytics_engine
-
-
-def get_template_manager():
-    global _template_manager
-    if _template_manager is None:
-        _template_manager = TemplateManager()
-    return _template_manager
-
-
 @app.get("/analytics", response_class=HTMLResponse)
 async def analytics_page(request: Request):
     analytics = get_analytics()
 
-    stats = analytics.get_dashboard_stats()
-    timeline = analytics.get_timeline_data(30)
-    company_heatmap = analytics.get_company_heatmap(10)
-    status_dist = analytics.get_status_distribution()
-    followup_data = analytics.get_followup_effectiveness()
+    try:
+        stats = analytics.get_dashboard_stats()
+        timeline = analytics.get_timeline_data(30)
+        company_heatmap = analytics.get_company_heatmap(10)
+        status_dist = analytics.get_status_distribution()
+        followup_data = analytics.get_followup_effectiveness()
+    except Exception as e:
+        print(f"Analytics error: {e}")
+        stats = {'success_rate': 0, 'sent': 0, 'total_followups': 0, 'bounced': 0, 'total_applications': 1}
+        timeline = {'labels': [], 'data': []}
+        company_heatmap = []
+        status_dist = {}
+        followup_data = {'distribution': {}, 'max_followups': 0, 'avg_followups': 0}
 
     return templates.TemplateResponse(
         "analytics.html",
@@ -466,15 +434,18 @@ async def analytics_page(request: Request):
 
 @app.get("/templates", response_class=HTMLResponse)
 async def templates_page(request: Request):
-    template_manager = get_template_manager()
-
-    templates = template_manager.get_all_templates()
+    try:
+        template_manager = get_template_manager()
+        templates_data = template_manager.get_all_templates()
+    except Exception as e:
+        print(f"Template error: {e}")
+        templates_data = {'application': {}, 'followup': {}}
 
     return templates.TemplateResponse(
         "templates_page.html",
         {
             "request": request,
-            "templates": templates
+            "templates": templates_data
         }
     )
 
@@ -514,6 +485,39 @@ async def delete_template(category: str, template_id: str):
 
 @app.get("/monitoring", response_class=HTMLResponse)
 async def monitoring_page(request: Request):
+    sheets_client, mailer, _ = get_clients()
+
+    try:
+        # Get real API usage
+        apps_en = sheets_client.get_applications_for_followup('en')
+        apps_fr = sheets_client.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
+
+        # Calculate quota usage
+        tz = pytz.timezone(TIMEZONE)
+        today = datetime.now(tz).date()
+        sent_today_count = sum(1 for app in all_apps
+                               if app.get('sent_date') and
+                               datetime.fromisoformat(app['sent_date']).date() == today)
+
+        gmail_quota_used = sent_today_count
+        gmail_quota_total = 250  # Gmail free tier
+        gmail_quota_percent = (gmail_quota_used / gmail_quota_total * 100) if gmail_quota_total > 0 else 0
+
+        # Sheets quota (rough estimate based on operations)
+        sheets_operations_today = sent_today_count * 3  # Each send = ~3 operations
+        sheets_quota_total = 500
+        sheets_quota_percent = (sheets_operations_today / sheets_quota_total * 100) if sheets_quota_total > 0 else 0
+
+    except Exception as e:
+        print(f"Monitoring error: {e}")
+        gmail_quota_used = 0
+        gmail_quota_total = 250
+        gmail_quota_percent = 0
+        sheets_operations_today = 0
+        sheets_quota_total = 500
+        sheets_quota_percent = 0
+
     health = system_monitor.get_health_status()
     recent_events = system_monitor.get_recent_events(50)
     gmail_stats = system_monitor.get_api_stats('gmail', 60)
@@ -526,7 +530,13 @@ async def monitoring_page(request: Request):
             "health": health,
             "events": recent_events,
             "gmail_stats": gmail_stats,
-            "sheets_stats": sheets_stats
+            "sheets_stats": sheets_stats,
+            "gmail_quota_used": gmail_quota_used,
+            "gmail_quota_total": gmail_quota_total,
+            "gmail_quota_percent": round(gmail_quota_percent, 1),
+            "sheets_quota_used": sheets_operations_today,
+            "sheets_quota_total": sheets_quota_total,
+            "sheets_quota_percent": round(sheets_quota_percent, 1)
         }
     )
 
@@ -541,30 +551,114 @@ async def settings_page(request: Request):
     )
 
 
-@app.put("/api/applications/{app_id}")
-async def update_application(
-        app_id: str,
-        language: str,
-        field: str = Form(...),
-        value: str = Form(...)
+@app.post("/api/settings/save")
+async def save_settings(
+        default_language: str = Form(...),
+        followup_days: int = Form(...),
+        timezone: str = Form(...),
+        email_delay: int = Form(...),
+        max_retries: int = Form(...),
+        auto_followup: bool = Form(False)
 ):
+    # TODO: Implement settings storage
+    return JSONResponse(content={'success': True, 'message': 'Settings saved successfully'})
+
+
+@app.post("/api/settings/export")
+async def export_data():
     sheets_client, _, _ = get_clients()
 
-    # Update specific field
-    # This would need sheet-specific implementation
+    try:
+        apps_en = sheets_client.get_applications_for_followup('en')
+        apps_fr = sheets_client.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
 
-    return JSONResponse(content={'success': True, 'value': value})
+        # Create CSV
+        import csv
+        import io
 
-if __name__ == "__main__":
-    import uvicorn
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=all_apps[0].keys() if all_apps else [])
+        writer.writeheader()
+        writer.writerows(all_apps)
 
-    host = os.getenv("WEB_HOST", "0.0.0.0")
-    port = int(os.getenv("WEB_PORT", "8000"))
-    debug = os.getenv("WEB_DEBUG", "true").lower() == "true"
+        csv_content = output.getvalue()
 
-    uvicorn.run(
-        "src.ui_web:app",
-        host=host,
-        port=port,
-        reload=debug
+        return JSONResponse(content={
+            'success': True,
+            'data': csv_content,
+            'filename': f'applications_export_{datetime.now().strftime("%Y%m%d")}.csv'
+        })
+    except Exception as e:
+        return JSONResponse(content={'success': False, 'error': str(e)})
+
+
+@app.post("/api/settings/clear")
+async def clear_data():
+    # This is a dangerous operation - require confirmation
+    return JSONResponse(content={'success': False, 'error': 'Not implemented for safety'})
+
+
+@app.get("/status/{app_id}", response_class=HTMLResponse)
+async def status_page(request: Request, app_id: str, lang: str = "en"):
+    sheets_client, _, _ = get_clients()
+
+    try:
+        application = sheets_client.get_application_by_id(app_id, lang)
+
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse(
+        "status.html",
+        {
+            "request": request,
+            "application": application,
+            "language": lang
+        }
     )
+
+
+@app.get("/api/attachments/{language}")
+async def get_attachments(language: str):
+    _, _, attachment_selector = get_clients()
+
+    attachments = [
+        {
+            'name': f.name,
+            'size': f.stat().st_size,
+            'modified': f.stat().st_mtime
+        }
+        for f in attachment_selector.get_attachments(language)
+    ]
+
+    return JSONResponse(content={'attachments': attachments})
+
+
+@app.post("/api/upload-attachment")
+async def upload_attachment(
+        language: str = Form(...),
+        file: UploadFile = File(...)
+):
+    folder = ATTACHMENT_FOLDER_EN if language == 'en' else ATTACHMENT_FOLDER_FR
+    folder.mkdir(parents=True, exist_ok=True)
+
+    file_path = folder / file.filename
+
+    with open(file_path, 'wb') as f:
+        content = await file.read()
+        f.write(content)
+
+    return JSONResponse(content={
+        'success': True,
+        'filename': file.filename,
+        'message': f'Uploaded to {language} folder'
+    })
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}

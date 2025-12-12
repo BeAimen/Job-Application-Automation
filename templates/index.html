@@ -19,9 +19,6 @@
         <div class="stat-content">
             <p class="stat-label">Total Applications</p>
             <p class="stat-value">{{ total_applications }}</p>
-            <p class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> 12% vs last month
-            </p>
         </div>
     </div>
 
@@ -32,10 +29,7 @@
         </div>
         <div class="stat-content">
             <p class="stat-label">Sent Today</p>
-            <p class="stat-value">{{ sent_today|default(0) }}</p>
-            <p class="stat-change neutral">
-                <i class="fas fa-minus"></i> Same as yesterday
-            </p>
+            <p class="stat-value">{{ sent_today }}</p>
         </div>
     </div>
 
@@ -47,42 +41,23 @@
         <div class="stat-content">
             <p class="stat-label">Due Follow-ups</p>
             <p class="stat-value">{{ due_followups }}</p>
+            {% if due_followups > 0 %}
             <a href="/followups" class="stat-action">
                 Process now <i class="fas fa-arrow-right ml-1 text-xs"></i>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Success Rate -->
+    <!-- Response Rate -->
     <div class="stat-card">
         <div class="stat-icon bg-purple-100">
             <i class="fas fa-chart-line text-purple-600"></i>
         </div>
         <div class="stat-content">
             <p class="stat-label">Response Rate</p>
-            <p class="stat-value">{{ response_rate|default("12.3") }}%</p>
-            <p class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> 2.1% vs average
-            </p>
+            <p class="stat-value">{{ response_rate }}%</p>
         </div>
-    </div>
-</div>
-
-<!-- Task Queue Indicator -->
-<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center animate-pulse">
-                <i class="fas fa-tasks text-white"></i>
-            </div>
-            <div>
-                <h3 class="font-semibold text-gray-900">Active Tasks</h3>
-                <p class="text-sm text-gray-600">3 pending sends • 12 follow-ups scheduled</p>
-            </div>
-        </div>
-        <button class="btn-sm btn-primary">
-            <i class="fas fa-play mr-1"></i> Process Queue
-        </button>
     </div>
 </div>
 
@@ -93,13 +68,8 @@
         <div class="chart-header">
             <h3 class="chart-title">
                 <i class="fas fa-chart-area text-blue-500 mr-2"></i>
-                Application Timeline
+                Application Timeline (Last 30 Days)
             </h3>
-            <select class="text-sm border-gray-300 rounded-md">
-                <option>Last 30 days</option>
-                <option>Last 60 days</option>
-                <option>Last 90 days</option>
-            </select>
         </div>
         <div class="chart-body">
             <canvas id="timelineChart" height="200"></canvas>
@@ -131,35 +101,34 @@
             </h3>
         </div>
         <div class="p-6">
+            {% if top_companies %}
             <div class="space-y-3">
-                {% for company in top_companies|default([
-                    {'name': 'TechCorp Industries', 'count': 12, 'trend': 'up'},
-                    {'name': 'Innovation Labs', 'count': 8, 'trend': 'up'},
-                    {'name': 'Global Solutions', 'count': 6, 'trend': 'down'},
-                    {'name': 'Future Systems', 'count': 5, 'trend': 'up'},
-                    {'name': 'Smart Engineering', 'count': 4, 'trend': 'same'}
-                ]) %}
+                {% for company in top_companies %}
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div class="flex items-center space-x-3 flex-1">
                         <div class="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
                             <i class="fas fa-building text-gray-600 text-sm"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="font-medium text-gray-900">{{ company.name }}</p>
+                            <p class="font-medium text-gray-900">{{ company.company }}</p>
                             <p class="text-xs text-gray-500">{{ company.count }} applications</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="w-32 bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-500 h-2 rounded-full" style="width: {{ (company.count / 12 * 100)|int }}%"></div>
+                            {% set max_count = top_companies[0].count if top_companies else 1 %}
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: {{ (company.count / max_count * 100)|int }}%"></div>
                         </div>
-                        <span class="text-{% if company.trend == 'up' %}green{% elif company.trend == 'down' %}red{% else %}gray{% endif %}-600 text-sm">
-                            <i class="fas fa-{% if company.trend == 'up' %}arrow-up{% elif company.trend == 'down' %}arrow-down{% else %}minus{% endif %}"></i>
-                        </span>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-2"></i>
+                <p>No companies yet</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -172,39 +141,32 @@
             </h3>
         </div>
         <div class="p-6">
+            {% if today_apps %}
             <div class="space-y-4">
+                {% for app in today_apps[:5] %}
                 <div class="activity-item">
                     <div class="activity-dot bg-green-500"></div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-900">Email sent</p>
-                        <p class="text-xs text-gray-500">to TechCorp Industries</p>
-                        <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                        <p class="text-xs text-gray-500">to {{ app.company }}</p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            {{ app.sent_date[11:16] if app.sent_date and len(app.sent_date) > 16 else 'N/A' }}
+                        </p>
                     </div>
                 </div>
-
-                <div class="activity-item">
-                    <div class="activity-dot bg-blue-500"></div>
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-900">Follow-up sent</p>
-                        <p class="text-xs text-gray-500">to Innovation Labs</p>
-                        <p class="text-xs text-gray-400 mt-1">4 hours ago</p>
-                    </div>
-                </div>
-
-                <div class="activity-item">
-                    <div class="activity-dot bg-purple-500"></div>
-                    <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-900">Application created</p>
-                        <p class="text-xs text-gray-500">Global Solutions draft</p>
-                        <p class="text-xs text-gray-400 mt-1">6 hours ago</p>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-calendar-times text-4xl mb-2"></i>
+                <p>No activity today</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Recent Applications with Inline Edit -->
+<!-- Recent Applications -->
 <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
     <div class="p-6 border-b border-gray-200 flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900">
@@ -251,9 +213,9 @@
                         {{ app.sent_date[:10] if app.sent_date else 'N/A' }}
                     </td>
                     <td class="table-cell">
-                        <button class="text-gray-400 hover:text-gray-600" onclick="showActions(this)">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </button>
+                        <a href="/status/{{ app.id }}?lang=en" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -278,16 +240,19 @@
 
 {% block scripts %}
 <script>
-// Timeline Chart
+// Timeline Chart with REAL DATA
 const timelineCtx = document.getElementById('timelineChart');
 if (timelineCtx) {
+    const labels = {{ timeline.labels | tojson }};
+    const data = {{ timeline.data | tojson }};
+
     new Chart(timelineCtx, {
         type: 'line',
         data: {
-            labels: ['Jan 1', 'Jan 5', 'Jan 10', 'Jan 15', 'Jan 20', 'Jan 25', 'Jan 30'],
+            labels: labels.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
             datasets: [{
                 label: 'Applications Sent',
-                data: [2, 5, 3, 8, 6, 4, 7],
+                data: data,
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4,
@@ -301,27 +266,39 @@ if (timelineCtx) {
                 legend: { display: false }
             },
             scales: {
-                y: { beginAtZero: true }
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
             }
         }
     });
 }
 
-// Language Chart
+// Language Chart with REAL DATA
 const languageCtx = document.getElementById('languageChart');
 if (languageCtx) {
+    const langData = {{ lang_dist | tojson }};
+
     new Chart(languageCtx, {
         type: 'doughnut',
         data: {
             labels: ['English', 'French'],
             datasets: [{
-                data: [65, 35],
+                data: [langData.en, langData.fr],
                 backgroundColor: ['rgb(59, 130, 246)', 'rgb(168, 85, 247)']
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
         }
     });
 }
