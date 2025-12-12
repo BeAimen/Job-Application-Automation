@@ -415,6 +415,146 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
+# ADD TO EXISTING src/ui_web.py
+
+from src.analytics import AnalyticsEngine
+from src.templates_manager import TemplateManager
+from src.monitoring import system_monitor
+
+# Initialize managers
+_analytics_engine = None
+_template_manager = None
+
+
+def get_analytics():
+    global _analytics_engine
+    if _analytics_engine is None:
+        sheets_client, _, _ = get_clients()
+        _analytics_engine = AnalyticsEngine(sheets_client)
+    return _analytics_engine
+
+
+def get_template_manager():
+    global _template_manager
+    if _template_manager is None:
+        _template_manager = TemplateManager()
+    return _template_manager
+
+
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_page(request: Request):
+    analytics = get_analytics()
+
+    stats = analytics.get_dashboard_stats()
+    timeline = analytics.get_timeline_data(30)
+    company_heatmap = analytics.get_company_heatmap(10)
+    status_dist = analytics.get_status_distribution()
+    followup_data = analytics.get_followup_effectiveness()
+
+    return templates.TemplateResponse(
+        "analytics.html",
+        {
+            "request": request,
+            "stats": stats,
+            "timeline": timeline,
+            "company_heatmap": company_heatmap,
+            "status_distribution": status_dist,
+            "followup_data": followup_data
+        }
+    )
+
+
+@app.get("/templates", response_class=HTMLResponse)
+async def templates_page(request: Request):
+    template_manager = get_template_manager()
+
+    templates = template_manager.get_all_templates()
+
+    return templates.TemplateResponse(
+        "templates_page.html",
+        {
+            "request": request,
+            "templates": templates
+        }
+    )
+
+
+@app.post("/api/templates/{category}/{template_id}")
+async def save_template(
+        category: str,
+        template_id: str,
+        name: str = Form(...),
+        language: str = Form(...),
+        position: Optional[str] = Form(None),
+        body: str = Form(...)
+):
+    template_manager = get_template_manager()
+
+    template_data = {
+        'name': name,
+        'language': language,
+        'body': body
+    }
+
+    if position:
+        template_data['position'] = position
+
+    template_manager.save_template(category, template_id, template_data)
+
+    return JSONResponse(content={'success': True})
+
+
+@app.delete("/api/templates/{category}/{template_id}")
+async def delete_template(category: str, template_id: str):
+    template_manager = get_template_manager()
+    template_manager.delete_template(category, template_id)
+
+    return JSONResponse(content={'success': True})
+
+
+@app.get("/monitoring", response_class=HTMLResponse)
+async def monitoring_page(request: Request):
+    health = system_monitor.get_health_status()
+    recent_events = system_monitor.get_recent_events(50)
+    gmail_stats = system_monitor.get_api_stats('gmail', 60)
+    sheets_stats = system_monitor.get_api_stats('sheets', 60)
+
+    return templates.TemplateResponse(
+        "monitoring.html",
+        {
+            "request": request,
+            "health": health,
+            "events": recent_events,
+            "gmail_stats": gmail_stats,
+            "sheets_stats": sheets_stats
+        }
+    )
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    return templates.TemplateResponse(
+        "settings.html",
+        {
+            "request": request
+        }
+    )
+
+
+@app.put("/api/applications/{app_id}")
+async def update_application(
+        app_id: str,
+        language: str,
+        field: str = Form(...),
+        value: str = Form(...)
+):
+    sheets_client, _, _ = get_clients()
+
+    # Update specific field
+    # This would need sheet-specific implementation
+
+    return JSONResponse(content={'success': True, 'value': value})
+
 if __name__ == "__main__":
     import uvicorn
 

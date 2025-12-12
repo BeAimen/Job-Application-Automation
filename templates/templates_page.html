@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Templates - JobFlow{% endblock %}
+{% block nav_templates %}active{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Templates</h1>
+        <p class="text-sm text-gray-500 mt-1">Manage email and application templates</p>
+    </div>
+    <button onclick="showNewTemplateModal()" class="btn-primary">
+        <i class="fas fa-plus mr-2"></i> New Template
+    </button>
+</div>
+
+<!-- Template Categories -->
+<div class="space-y-6">
+    <!-- Application Templates -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-paper-plane text-blue-500 mr-2"></i>
+                Application Templates
+            </h2>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for id, template in templates.application.items() %}
+            <div class="template-card">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-semibold text-gray-900">{{ template.name }}</h3>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-language mr-1"></i>{{ template.language.upper() }}
+                        </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="editTemplate('application', '{{ id }}')" class="text-gray-400 hover:text-blue-600">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTemplate('application', '{{ id }}')" class="text-gray-400 hover:text-red-600">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 line-clamp-3">{{ template.body[:100] }}...</p>
+                <button onclick="useTemplate('application', '{{ id }}')" class="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    Use Template →
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Follow-up Templates -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-redo text-green-500 mr-2"></i>
+                Follow-up Templates
+            </h2>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for id, template in templates.followup.items() %}
+            <div class="template-card">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-semibold text-gray-900">{{ template.name }}</h3>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-language mr-1"></i>{{ template.language.upper() }}
+                        </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="editTemplate('followup', '{{ id }}')" class="text-gray-400 hover:text-blue-600">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTemplate('followup', '{{ id }}')" class="text-gray-400 hover:text-red-600">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 line-clamp-3">{{ template.body[:100] }}...</p>
+                <button onclick="useTemplate('followup', '{{ id }}')" class="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    Use Template →
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Template Editor Modal -->
+<div id="templateModal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeTemplateModal()"></div>
+    <div class="modal-content-large">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium">Edit Template</h3>
+            <button onclick="closeTemplateModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="templateForm" class="space-y-4">
+            <input type="hidden" id="templateCategory" name="category">
+            <input type="hidden" id="templateId" name="id">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Template Name</label>
+                <input type="text" id="templateName" name="name" required class="form-input">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                <select id="templateLanguage" name="language" required class="form-input">
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                </select>
+            </div>
+            
+            <div id="positionField">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Position (Optional)</label>
+                <input type="text" id="templatePosition" name="position" class="form-input">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Email Body</label>
+                <textarea id="templateBody" name="body" rows="12" required class="form-input"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeTemplateModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Save Template</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showNewTemplateModal() {
+    document.getElementById('templateModal').classList.remove('hidden');
+    document.getElementById('templateForm').reset();
+}
+
+function closeTemplateModal() {
+    document.getElementById('templateModal').classList.add('hidden');
+}
+
+function editTemplate(category, id) {
+    // Load template data and show modal
+    showNewTemplateModal();
+    // TODO: Load template data via AJAX
+}
+
+function deleteTemplate(category, id) {
+    if (confirm('Are you sure you want to delete this template?')) {
+        fetch(`/api/templates/${category}/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Template deleted successfully', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        });
+    }
+}
+
+function useTemplate(category, id) {
+    // TODO: Navigate to send page with template pre-filled
+    window.location.href = `/send?template=${category}:${id}`;
+}
+</script>
+{% endblock %}

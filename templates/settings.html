@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Settings - JobFlow{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+    <p class="text-sm text-gray-500 mt-1">Manage your preferences and configuration</p>
+</div>
+
+<div class="max-w-4xl">
+    <!-- General Settings -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">General Settings</h2>
+        </div>
+        <div class="p-6 space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Default Language</label>
+                <select class="form-input max-w-xs">
+                    <option value="both" selected>Both (EN + FR)</option>
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Follow-up Interval (days)</label>
+                <input type="number" value="7" class="form-input max-w-xs">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                <select class="form-input max-w-xs">
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">Eastern Time</option>
+                    <option value="Europe/Paris">Central European Time</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Email Settings -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Email Settings</h2>
+        </div>
+        <div class="p-6 space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Delay Between Emails (seconds)</label>
+                <input type="number" value="2" class="form-input max-w-xs">
+                <p class="mt-1 text-sm text-gray-500">Recommended: 2-5 seconds to avoid rate limits</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Max Retry Attempts</label>
+                <input type="number" value="3" class="form-input max-w-xs">
+            </div>
+            
+            <div class="flex items-center">
+                <input type="checkbox" id="autoFollowup" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <label for="autoFollowup" class="ml-2 text-sm text-gray-700">
+                    Enable automatic follow-ups
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Settings -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Notifications</h2>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-900">Email Sent Notifications</p>
+                    <p class="text-xs text-gray-500">Get notified when emails are successfully sent</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-900">Follow-up Reminders</p>
+                    <p class="text-xs text-gray-500">Remind me when follow-ups are due</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-900">Error Alerts</p>
+                    <p class="text-xs text-gray-500">Alert me when errors occur</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Data Management -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Data Management</h2>
+        </div>
+        <div class="p-6 space-y-4">
+            <button class="btn-secondary w-full justify-center">
+                <i class="fas fa-download mr-2"></i> Export All Data (CSV)
+            </button>
+            
+            <button class="btn-secondary w-full justify-center">
+                <i class="fas fa-file-excel mr-2"></i> Export Analytics Report
+            </button>
+            
+            <button class="btn-secondary w-full justify-center text-red-600 border-red-300 hover:bg-red-50">
+                <i class="fas fa-trash mr-2"></i> Clear All Data
+            </button>
+        </div>
+    </div>
+    
+    <!-- Save Button -->
+    <div class="mt-6 flex justify-end">
+        <button class="btn-primary">
+            <i class="fas fa-save mr-2"></i> Save Settings
+        </button>
+    </div>
+</div>
+{% endblock %}

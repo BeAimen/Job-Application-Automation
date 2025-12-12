@@ -1,71 +1,112 @@
-// Job Application Automation - Main JavaScript
+// JobFlow - Enhanced Main JavaScript
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Job Application Automation System Loaded');
-
-    // Add smooth scrolling to all links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-
-    // Auto-hide alerts after 5 seconds
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 300);
-        }, 5000);
-    });
-
-    // Setup website URL auto-formatting
-    const websiteInput = document.querySelector('input[name="website"]');
-    if (websiteInput) {
-        websiteInput.addEventListener('blur', function() {
-            formatWebsiteUrl(this);
-        });
-    }
+    console.log('JobFlow SaaS Loaded');
+    initializeToastContainer();
+    initializeSkeletons();
 });
 
-// Auto-format website URL
-function formatWebsiteUrl(input) {
-    let url = input.value.trim();
+// Toast Notification System
+function showToast(message, type = 'info', options = {}) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
 
-    if (!url) return;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
 
-    try {
-        // Add https:// if no protocol
-        if (!url.match(/^https?:\/\//i)) {
-            url = 'https://' + url;
-        }
+    const icon = {
+        success: 'check-circle',
+        error: 'exclamation-circle',
+        warning: 'exclamation-triangle',
+        info: 'info-circle'
+    }[type];
 
-        // Parse URL
-        const urlObj = new URL(url);
-        const hostname = urlObj.hostname.toLowerCase();
+    toast.innerHTML = `
+        <div class="flex-shrink-0">
+            <i class="fas fa-${icon} text-xl text-${type === 'success' ? 'green' : type === 'error' ? 'red' : type === 'warning' ? 'yellow' : 'blue'}-600"></i>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm font-medium text-gray-900">${message}</p>
+        </div>
+        ${options.action ? `
+            <button onclick="handleToastAction(this)" class="text-sm font-medium text-blue-600 hover:text-blue-700">
+                ${options.action}
+            </button>
+        ` : ''}
+        <button onclick="closeToast(this)" class="flex-shrink-0 text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
 
-        // Add www. if missing (but only if it's not an IP, localhost, or already has subdomain)
-        if (!hostname.startsWith('www.') &&
-            !hostname.match(/^\\d+\\.\\d+\\.\\d+\\.\\d+$/) &&
-            hostname !== 'localhost' &&
-            !hostname.includes('localhost:') &&
-            hostname.split('.').length === 2) { // Only domain.tld (no subdomain)
-            urlObj.hostname = 'www.' + hostname;
-        }
-
-        input.value = urlObj.toString();
-    } catch (e) {
-        // Invalid URL, leave as is
-        console.log('Invalid URL format:', url);
+    if (options.onAction) {
+        toast.dataset.onAction = options.onAction;
     }
+
+    container.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+function closeToast(button) {
+    const toast = button.closest('.toast');
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+}
+
+function handleToastAction(button) {
+    const toast = button.closest('.toast');
+    const onAction = toast.dataset.onAction;
+    if (onAction) {
+        eval(onAction)();
+    }
+    closeToast(button);
+}
+
+function initializeToastContainer() {
+    if (!document.getElementById('toast-container')) {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed top-4 right-4 z-50 space-y-2';
+        document.body.appendChild(container);
+    }
+}
+
+// Loading Skeletons
+function showSkeleton(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton-card';
+    skeleton.innerHTML = `
+        <div class="skeleton-line mb-4" style="width: 60%"></div>
+        <div class="skeleton-line mb-3" style="width: 100%"></div>
+        <div class="skeleton-line mb-3" style="width: 90%"></div>
+        <div class="skeleton-line" style="width: 80%"></div>
+    `;
+
+    target.innerHTML = '';
+    target.appendChild(skeleton);
+}
+
+function hideSkeleton(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    target.innerHTML = '';
+}
+
+function initializeSkeletons() {
+    // Show skeletons for slow-loading sections
+    const sections = document.querySelectorAll('[data-skeleton]');
+    sections.forEach(section => {
+        if (!section.hasChildNodes()) {
+            showSkeleton(section.id);
+        }
+    });
 }
 
 // Utility Functions
@@ -75,150 +116,87 @@ function formatDate(dateString) {
     return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: 'numeric'
     });
 }
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-        type === 'success' ? 'bg-green-500' :
-        type === 'error' ? 'bg-red-500' :
-        type === 'warning' ? 'bg-yellow-500' :
-        'bg-blue-500'
-    } text-white`;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Form validation helper
 function validateEmail(email) {
     const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
     return re.test(email);
 }
 
-function validateForm(form) {
-    const requiredFields = form.querySelectorAll('[required]');
-    let isValid = true;
-
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.classList.add('border-red-500');
-            isValid = false;
-        } else {
-            field.classList.remove('border-red-500');
-        }
-    });
-
-    return isValid;
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
 }
 
-// Confirmation dialog
-function confirmAction(message) {
-    return new Promise((resolve) => {
-        const result = confirm(message);
-        resolve(result);
-    });
-}
-
-// Copy to clipboard
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Copied to clipboard!', 'success');
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-        showNotification('Failed to copy', 'error');
-    });
-}
-
-// Export table to CSV
-function exportTableToCSV(tableId, filename) {
+// Export functions
+function exportToCSV(tableId, filename) {
     const table = document.getElementById(tableId);
     if (!table) return;
 
-    const rows = table.querySelectorAll('tr');
-    const csv = [];
+    const rows = Array.from(table.querySelectorAll('tr'));
+    const csv = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('td, th'));
+        return cells.map(cell => {
+            let text = cell.textContent.trim();
+            text = text.replace(/"/g, '""');
+            return `"${text}"`;
+        }).join(',');
+    }).join('\\n');
 
-    rows.forEach(row => {
-        const cols = row.querySelectorAll('td, th');
-        const rowData = Array.from(cols).map(col => {
-            let data = col.textContent.trim();
-            // Escape quotes
-            data = data.replace(/"/g, '""');
-            return `"${data}"`;
-        });
-        csv.push(rowData.join(','));
-    });
-
-    const csvContent = csv.join('\\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename || 'export.csv';
     a.click();
-    window.URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
 }
-
-// Debounce function for search inputs
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Search/filter functionality
-function filterTable(searchInput, tableId) {
-    const filter = searchInput.value.toLowerCase();
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    const rows = table.querySelectorAll('tbody tr');
-
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-    });
-}
-
-// Close modal on outside click
-document.addEventListener('click', function(event) {
-    const modals = document.querySelectorAll('.modal:not(.hidden)');
-    modals.forEach(modal => {
-        if (event.target === modal) {
-            modal.classList.add('hidden');
-        }
-    });
-});
 
 // Keyboard shortcuts
-document.addEventListener('keydown', function(event) {
-    // Escape key closes modals
-    if (event.key === 'Escape') {
-        const modals = document.querySelectorAll('.modal:not(.hidden)');
-        modals.forEach(modal => modal.classList.add('hidden'));
+document.addEventListener('keydown', (e) => {
+    // Escape closes modals
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+            modal.classList.add('hidden');
+        });
     }
 
-    // Ctrl/Cmd + K for search (if search exists)
-    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-        event.preventDefault();
-        const searchInput = document.querySelector('input[type="search"]');
-        if (searchInput) searchInput.focus();
+    // Ctrl/Cmd + K for quick actions
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        // TODO: Show command palette
     }
 });
 
-console.log('Main.js loaded successfully');
+// Auto-format website URLs
+function formatWebsiteUrl(input) {
+    let url = input.value.trim();
+    if (!url) return;
+
+    try {
+        if (!url.match(/^https?:\\/\\//i)) {
+            url = 'https://' + url;
+        }
+
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.toLowerCase();
+
+        if (!hostname.startsWith('www.') &&
+            !hostname.match(/^\\d+\\.\\d+\\.\\d+\\.\\d+$/) &&
+            hostname !== 'localhost' &&
+            hostname.split('.').length === 2) {
+            urlObj.hostname = 'www.' + hostname;
+        }
+
+        input.value = urlObj.toString();
+    } catch (e) {
+        console.log('Invalid URL format');
+    }
+}
+
+console.log('✨ JobFlow SaaS UI Loaded Successfully');

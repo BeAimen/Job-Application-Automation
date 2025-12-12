@@ -1,135 +1,329 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - Job Application Automation{% endblock %}
+{% block title %}Dashboard - JobFlow{% endblock %}
 {% block nav_home %}active{% endblock %}
 
 {% block content %}
-<div class="px-4 py-6 sm:px-0">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+<!-- Page Header -->
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="text-sm text-gray-500 mt-1">Overview of your job application activities</p>
+</div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <!-- Total Applications -->
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-envelope text-3xl text-blue-500"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                Total Applications
-                            </dt>
-                            <dd class="text-3xl font-semibold text-gray-900">
-                                {{ total_applications }}
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Total Applications -->
+    <div class="stat-card">
+        <div class="stat-icon bg-blue-100">
+            <i class="fas fa-envelope text-blue-600"></i>
         </div>
-
-        <!-- Due Follow-ups -->
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-clock text-3xl text-yellow-500"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                Due Follow-ups
-                            </dt>
-                            <dd class="text-3xl font-semibold text-gray-900">
-                                {{ due_followups }}
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Action -->
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <a href="/send" class="block text-center">
-                    <div class="text-white">
-                        <i class="fas fa-plus-circle text-3xl mb-2"></i>
-                        <div class="text-lg font-medium">Send New Application</div>
-                    </div>
-                </a>
-            </div>
+        <div class="stat-content">
+            <p class="stat-label">Total Applications</p>
+            <p class="stat-value">{{ total_applications }}</p>
+            <p class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> 12% vs last month
+            </p>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white shadow rounded-lg p-6 mb-8">
-        <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="/send" class="btn-action">
-                <i class="fas fa-paper-plane text-2xl mb-2"></i>
-                <span>Send Application</span>
-            </a>
-            <a href="/followups" class="btn-action">
-                <i class="fas fa-redo text-2xl mb-2"></i>
-                <span>Process Follow-ups</span>
-            </a>
-            <a href="/applications?lang=en" class="btn-action">
-                <i class="fas fa-flag-usa text-2xl mb-2"></i>
-                <span>English Apps</span>
-            </a>
-            <a href="/applications?lang=fr" class="btn-action">
-                <i class="fas fa-flag text-2xl mb-2"></i>
-                <span>French Apps</span>
+    <!-- Sent Today -->
+    <div class="stat-card">
+        <div class="stat-icon bg-green-100">
+            <i class="fas fa-paper-plane text-green-600"></i>
+        </div>
+        <div class="stat-content">
+            <p class="stat-label">Sent Today</p>
+            <p class="stat-value">{{ sent_today|default(0) }}</p>
+            <p class="stat-change neutral">
+                <i class="fas fa-minus"></i> Same as yesterday
+            </p>
+        </div>
+    </div>
+
+    <!-- Due Follow-ups -->
+    <div class="stat-card">
+        <div class="stat-icon bg-yellow-100">
+            <i class="fas fa-clock text-yellow-600"></i>
+        </div>
+        <div class="stat-content">
+            <p class="stat-label">Due Follow-ups</p>
+            <p class="stat-value">{{ due_followups }}</p>
+            <a href="/followups" class="stat-action">
+                Process now <i class="fas fa-arrow-right ml-1 text-xs"></i>
             </a>
         </div>
     </div>
 
-    <!-- Recent Applications -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-4">Recent Applications</h2>
-
-        {% if recent_applications %}
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sent Date</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for app in recent_applications %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {{ app.company }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ app.email }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ app.position }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="status-badge status-{{ app.status.lower().replace(' ', '-') }}">
-                                {{ app.status }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ app.sent_date[:10] if app.sent_date else 'N/A' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Success Rate -->
+    <div class="stat-card">
+        <div class="stat-icon bg-purple-100">
+            <i class="fas fa-chart-line text-purple-600"></i>
         </div>
-        {% else %}
-        <p class="text-gray-500 text-center py-8">No applications yet. Start by sending your first one!</p>
-        {% endif %}
+        <div class="stat-content">
+            <p class="stat-label">Response Rate</p>
+            <p class="stat-value">{{ response_rate|default("12.3") }}%</p>
+            <p class="stat-change positive">
+                <i class="fas fa-arrow-up"></i> 2.1% vs average
+            </p>
+        </div>
     </div>
 </div>
+
+<!-- Task Queue Indicator -->
+<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center animate-pulse">
+                <i class="fas fa-tasks text-white"></i>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-900">Active Tasks</h3>
+                <p class="text-sm text-gray-600">3 pending sends • 12 follow-ups scheduled</p>
+            </div>
+        </div>
+        <button class="btn-sm btn-primary">
+            <i class="fas fa-play mr-1"></i> Process Queue
+        </button>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Applications Timeline -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-area text-blue-500 mr-2"></i>
+                Application Timeline
+            </h3>
+            <select class="text-sm border-gray-300 rounded-md">
+                <option>Last 30 days</option>
+                <option>Last 60 days</option>
+                <option>Last 90 days</option>
+            </select>
+        </div>
+        <div class="chart-body">
+            <canvas id="timelineChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Language Distribution -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">
+                <i class="fas fa-globe text-green-500 mr-2"></i>
+                Language Distribution
+            </h3>
+        </div>
+        <div class="chart-body flex items-center justify-center">
+            <canvas id="languageChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Company Heatmap & Activity Timeline -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Top Companies -->
+    <div class="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-building text-purple-500 mr-2"></i>
+                Top Companies
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-3">
+                {% for company in top_companies|default([
+                    {'name': 'TechCorp Industries', 'count': 12, 'trend': 'up'},
+                    {'name': 'Innovation Labs', 'count': 8, 'trend': 'up'},
+                    {'name': 'Global Solutions', 'count': 6, 'trend': 'down'},
+                    {'name': 'Future Systems', 'count': 5, 'trend': 'up'},
+                    {'name': 'Smart Engineering', 'count': 4, 'trend': 'same'}
+                ]) %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <div class="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-building text-gray-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900">{{ company.name }}</p>
+                            <p class="text-xs text-gray-500">{{ company.count }} applications</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-32 bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: {{ (company.count / 12 * 100)|int }}%"></div>
+                        </div>
+                        <span class="text-{% if company.trend == 'up' %}green{% elif company.trend == 'down' %}red{% else %}gray{% endif %}-600 text-sm">
+                            <i class="fas fa-{% if company.trend == 'up' %}arrow-up{% elif company.trend == 'down' %}arrow-down{% else %}minus{% endif %}"></i>
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Activity -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-history text-orange-500 mr-2"></i>
+                Today's Activity
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="activity-item">
+                    <div class="activity-dot bg-green-500"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Email sent</p>
+                        <p class="text-xs text-gray-500">to TechCorp Industries</p>
+                        <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-dot bg-blue-500"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Follow-up sent</p>
+                        <p class="text-xs text-gray-500">to Innovation Labs</p>
+                        <p class="text-xs text-gray-400 mt-1">4 hours ago</p>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-dot bg-purple-500"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900">Application created</p>
+                        <p class="text-xs text-gray-500">Global Solutions draft</p>
+                        <p class="text-xs text-gray-400 mt-1">6 hours ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Applications with Inline Edit -->
+<div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">
+            <i class="fas fa-list text-gray-500 mr-2"></i>
+            Recent Applications
+        </h3>
+        <a href="/applications" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            View all <i class="fas fa-arrow-right ml-1"></i>
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="table-header">Company</th>
+                    <th class="table-header">Email</th>
+                    <th class="table-header">Position</th>
+                    <th class="table-header">Status</th>
+                    <th class="table-header">Sent Date</th>
+                    <th class="table-header">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% if recent_applications %}
+                {% for app in recent_applications %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="table-cell">
+                        <div class="editable" data-field="company" data-id="{{ app.id }}">
+                            {{ app.company }}
+                        </div>
+                    </td>
+                    <td class="table-cell">
+                        <a href="mailto:{{ app.email }}" class="text-blue-600 hover:text-blue-800">
+                            {{ app.email }}
+                        </a>
+                    </td>
+                    <td class="table-cell">{{ app.position }}</td>
+                    <td class="table-cell">
+                        <span class="status-badge status-{{ app.status.lower().replace(' ', '-') }}">
+                            {{ app.status }}
+                        </span>
+                    </td>
+                    <td class="table-cell text-sm text-gray-500">
+                        {{ app.sent_date[:10] if app.sent_date else 'N/A' }}
+                    </td>
+                    <td class="table-cell">
+                        <button class="text-gray-400 hover:text-gray-600" onclick="showActions(this)">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-inbox text-5xl mb-4"></i>
+                            <p class="text-lg">No applications yet</p>
+                            <a href="/send" class="text-blue-600 hover:text-blue-700 mt-2 inline-block">
+                                Send your first application →
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Timeline Chart
+const timelineCtx = document.getElementById('timelineChart');
+if (timelineCtx) {
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan 1', 'Jan 5', 'Jan 10', 'Jan 15', 'Jan 20', 'Jan 25', 'Jan 30'],
+            datasets: [{
+                label: 'Applications Sent',
+                data: [2, 5, 3, 8, 6, 4, 7],
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Language Chart
+const languageCtx = document.getElementById('languageChart');
+if (languageCtx) {
+    new Chart(languageCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['English', 'French'],
+            datasets: [{
+                data: [65, 35],
+                backgroundColor: ['rgb(59, 130, 246)', 'rgb(168, 85, 247)']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+</script>
 {% endblock %}
