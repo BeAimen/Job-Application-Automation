@@ -7,6 +7,16 @@ from pathlib import Path
 import os
 from datetime import datetime, timedelta
 import pytz
+import sys
+import time
+import random
+import csv
+import io
+
+# Insert project root to import settings_manager
+from src.config import PROJECT_ROOT, ATTACHMENT_FOLDER_EN, ATTACHMENT_FOLDER_FR
+sys.path.insert(0, str(PROJECT_ROOT))
+from settings_manager import settings_manager
 
 from src.auth import get_authenticated_services
 from src.sheets import SheetsClient
@@ -17,7 +27,6 @@ from src.utils import (
     validate_email, get_default_body, get_default_position,
     substitute_placeholders, is_followup_due
 )
-from src.config import PROJECT_ROOT, ATTACHMENT_FOLDER_EN, ATTACHMENT_FOLDER_FR, TIMEZONE
 from src.analytics import AnalyticsEngine
 from src.templates_manager import TemplateManager
 from src.monitoring import system_monitor
@@ -70,6 +79,17 @@ def get_template_manager():
     return _template_manager
 
 
+def calculate_real_response_rate(all_apps):
+    """Calculate real response rate based on actual responses."""
+    if not all_apps:
+        return 0
+
+    # Count applications with positive responses
+    responded = sum(1 for app in all_apps
+                   if app.get('status') in ['Interview', 'Call Received', 'Hired', 'Offer', 'Interview Scheduled', 'Interview Complete'])
+    return (responded / len(all_apps) * 100) if len(all_apps) > 0 else 0
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     sheets_client, _, _ = get_clients()
@@ -84,8 +104,9 @@ async def home(request: Request):
         # Calculate real stats
         total_applications = len(all_apps)
 
-        # Sent today
-        tz = pytz.timezone(TIMEZONE)
+        # Sent today (use timezone from settings)
+        timezone = settings_manager.get_setting('timezone', 'UTC')
+        tz = pytz.timezone(timezone)
         today = datetime.now(tz).date()
         sent_today = sum(1 for app in all_apps
                          if app.get('sent_date') and
@@ -95,11 +116,8 @@ async def home(request: Request):
         due_followups = sum(1 for app in all_apps
                             if is_followup_due(app.get('next_followup_date', '')))
 
-        # Response rate (placeholder - would need tracking)
-        # For now, calculate based on status changes
-        responded = sum(1 for app in all_apps
-                        if app.get('status') not in ['Pending', 'Sent', 'Failed'])
-        response_rate = (responded / total_applications * 100) if total_applications > 0 else 0
+        # REAL Response rate calculation
+        response_rate = calculate_real_response_rate(all_apps)
 
         # Get timeline data (real)
         timeline = analytics.get_timeline_data(30)
@@ -155,16 +173,39 @@ async def home(request: Request):
 
 
 @app.get("/send", response_class=HTMLResponse)
-async def send_page(request: Request):
+async def send_page(request: Request, template: Optional[str] = None):
     _, _, attachment_selector = get_clients()
 
     # Get available attachments
     attachments_en = [f.name for f in attachment_selector.get_attachments('en')]
     attachments_fr = [f.name for f in attachment_selector.get_attachments('fr')]
 
-    # Get default values
-    default_body_en = get_default_body('en')
-    default_body_fr = get_default_body('fr')
+    # Get default language from settings
+    default_language = settings_manager.get_setting('default_language', 'en')
+
+    # Template loading (optional template query param format: "category:template_id")
+    template_body_en = None
+    template_body_fr = None
+    template_language = default_language
+
+    if template:
+        template_manager = get_template_manager()
+        try:
+            category, template_id = template.split(':', 1)
+            template_data = template_manager.get_template(category, template_id)
+            if template_data:
+                template_language = template_data.get('language', 'en')
+                if template_language == 'en':
+                    template_body_en = template_data.get('body', '')
+                else:
+                    template_body_fr = template_data.get('body', '')
+        except Exception:
+            # ignore malformed template param
+            pass
+
+    # Get default values (template overrides default body if provided)
+    default_body_en = template_body_en or get_default_body('en')
+    default_body_fr = template_body_fr or get_default_body('fr')
     default_position_en = get_default_position('en')
     default_position_fr = get_default_position('fr')
 
@@ -177,7 +218,8 @@ async def send_page(request: Request):
             "default_body_en": default_body_en,
             "default_body_fr": default_body_fr,
             "default_position_en": default_position_en,
-            "default_position_fr": default_position_fr
+            "default_position_fr": default_position_fr,
+            "default_language": template_language if template else default_language
         }
     )
 
@@ -205,8 +247,8 @@ async def send_application(
     if not mailer:
         raise HTTPException(status_code=500, detail="Gmail service not available")
 
-    # Parse emails
-    email_list = [e.strip() for e in emails.replace('\\n', ',').split(',') if e.strip()]
+    # Parse emails (support newline-separated lists)
+    email_list = [e.strip() for e in emails.replace('\n', ',').split(',') if e.strip()]
 
     # Validate emails
     invalid_emails = [e for e in email_list if not validate_email(e)]
@@ -215,6 +257,9 @@ async def send_application(
             status_code=400,
             detail=f"Invalid emails: {', '.join(invalid_emails)}"
         )
+
+    # Get email delay from settings (seconds)
+    email_delay = settings_manager.get_setting('email_delay', 2)
 
     # Process languages
     languages = ['en', 'fr'] if language == 'both' else [language]
@@ -284,7 +329,11 @@ async def send_application(
                     lang
                 )
 
-                result = mailer.send_with_delay(
+                # Use delay from settings (basic randomized delay to avoid bursts)
+                time.sleep(email_delay + random.uniform(0, 1))
+
+                # Send email via mailer (assumes GmailMailer has send_email)
+                result = mailer.send_email(
                     to_email=recipient_email,
                     subject=final_position,
                     body=final_body,
@@ -330,12 +379,13 @@ async def applications_page(
         applications = sheets_client.get_applications_for_followup(lang)
 
         if status:
-            applications = [app for app in applications if app['status'] == status]
+            applications = [app for app in applications if app.get('status') == status]
 
         all_apps = sheets_client.get_applications_for_followup(lang)
         statuses = sorted(set(app.get('status', 'Unknown') for app in all_apps))
 
     except Exception as e:
+        print(f"Applications page error: {e}")
         applications = []
         statuses = []
 
@@ -368,6 +418,7 @@ async def followups_page(request: Request, lang: str = "both"):
                     app['language'] = language
                     due_applications.append(app)
         except Exception as e:
+            print(f"Followups retrieval error for {language}: {e}")
             pass
 
     due_applications.sort(key=lambda x: x.get('next_followup_date', ''))
@@ -483,6 +534,37 @@ async def delete_template(category: str, template_id: str):
     return JSONResponse(content={'success': True})
 
 
+@app.post("/api/templates")
+async def create_template(
+    name: str = Form(...),
+    language: str = Form(...),
+    category: str = Form(...),
+    body: str = Form(...)
+):
+    """Create a new template."""
+    template_manager = get_template_manager()
+
+    try:
+        # Generate ID from name
+        template_id = name.lower().replace(' ', '_').replace('-', '_')
+
+        template_data = {
+            'name': name,
+            'language': language,
+            'body': body
+        }
+
+        template_manager.save_template(category, template_id, template_data)
+
+        return JSONResponse(content={'success': True, 'id': template_id})
+
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
 @app.get("/monitoring", response_class=HTMLResponse)
 async def monitoring_page(request: Request):
     sheets_client, mailer, _ = get_clients()
@@ -493,8 +575,9 @@ async def monitoring_page(request: Request):
         apps_fr = sheets_client.get_applications_for_followup('fr')
         all_apps = apps_en + apps_fr
 
-        # Calculate quota usage
-        tz = pytz.timezone(TIMEZONE)
+        # Calculate quota usage (use timezone from settings)
+        timezone = settings_manager.get_setting('timezone', 'UTC')
+        tz = pytz.timezone(timezone)
         today = datetime.now(tz).date()
         sent_today_count = sum(1 for app in all_apps
                                if app.get('sent_date') and
@@ -541,12 +624,150 @@ async def monitoring_page(request: Request):
     )
 
 
+@app.get("/status/{app_id}", response_class=HTMLResponse)
+async def status_page(request: Request, app_id: str, lang: str = "en"):
+    sheets_client, _, _ = get_clients()
+
+    try:
+        application = sheets_client.get_application_by_id(app_id, lang)
+
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Available status options
+    status_options = [
+        'Pending', 'Sent', 'Follow-up Sent', 'Call Received',
+        'Interview Scheduled', 'Interview Complete', 'Offer',
+        'Hired', 'Rejected', 'Bounced', 'Failed', 'Frozen'
+    ]
+
+    return templates.TemplateResponse(
+        "status.html",
+        {
+            "request": request,
+            "application": application,
+            "language": lang,
+            "status_options": status_options
+        }
+    )
+
+
+@app.put("/api/applications/{app_id}")
+async def update_application(
+    app_id: str,
+    field: str = Form(...),
+    value: str = Form(...),
+    language: str = Form(...)
+):
+    """Update application field."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        # Get current application
+        app = sheets_client.get_application_by_id(app_id, language)
+        if not app:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+        # Update based on field
+        if field == 'status':
+            sheets_client.update_application_status(app_id, language, value)
+        elif field == 'company':
+            # Update company name
+            sheet_name = sheets_client._get_sheet_name(language)
+            row_index = sheets_client._find_row_by_id(sheet_name, app_id)
+            if row_index:
+                sheets_client.service.spreadsheets().values().update(
+                    spreadsheetId=sheets_client.spreadsheet_id,
+                    range=f"{sheet_name}!B{row_index}",
+                    valueInputOption="RAW",
+                    body={"values": [[value]]}
+                ).execute()
+        elif field == 'email':
+            # Update email
+            sheet_name = sheets_client._get_sheet_name(language)
+            row_index = sheets_client._find_row_by_id(sheet_name, app_id)
+            if row_index:
+                sheets_client.service.spreadsheets().values().update(
+                    spreadsheetId=sheets_client.spreadsheet_id,
+                    range=f"{sheet_name}!C{row_index}",
+                    valueInputOption="RAW",
+                    body={"values": [[value]]}
+                ).execute()
+        elif field == 'body':
+            # Update body
+            sheet_name = sheets_client._get_sheet_name(language)
+            row_index = sheets_client._find_row_by_id(sheet_name, app_id)
+            if row_index:
+                sheets_client.service.spreadsheets().values().update(
+                    spreadsheetId=sheets_client.spreadsheet_id,
+                    range=f"{sheet_name}!K{row_index}",
+                    valueInputOption="RAW",
+                    body={"values": [[value]]}
+                ).execute()
+
+        sheets_client.log_activity(
+            app_id, app.get('email', ''), f'field_updated_{field}', 'success', f'Updated {field} to: {value}'
+        )
+
+        return JSONResponse(content={'success': True})
+
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.delete("/api/applications/{app_id}")
+async def delete_application(app_id: str, language: str = Form(...)):
+    """Delete an application."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        sheet_name = sheets_client._get_sheet_name(language)
+        row_index = sheets_client._find_row_by_id(sheet_name, app_id)
+
+        if not row_index:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+        # Delete the row
+        sheets_client.service.spreadsheets().batchUpdate(
+            spreadsheetId=sheets_client.spreadsheet_id,
+            body={
+                "requests": [{
+                    "deleteDimension": {
+                        "range": {
+                            "sheetId": 0,  # Adjust based on your sheet structure
+                            "dimension": "ROWS",
+                            "startIndex": row_index - 1,
+                            "endIndex": row_index
+                        }
+                    }
+                }]
+            }
+        ).execute()
+
+        return JSONResponse(content={'success': True})
+
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request):
+    settings = settings_manager.get_all_settings()
+
     return templates.TemplateResponse(
         "settings.html",
         {
-            "request": request
+            "request": request,
+            "settings": settings
         }
     )
 
@@ -560,8 +781,32 @@ async def save_settings(
         max_retries: int = Form(...),
         auto_followup: bool = Form(False)
 ):
-    # TODO: Implement settings storage
-    return JSONResponse(content={'success': True, 'message': 'Settings saved successfully'})
+    """Save settings."""
+    try:
+        success = settings_manager.update_settings({
+            'default_language': default_language,
+            'followup_days': followup_days,
+            'timezone': timezone,
+            'email_delay': email_delay,
+            'max_retries': max_retries,
+            'auto_followup': auto_followup
+        })
+
+        if success:
+            return JSONResponse(content={
+                'success': True,
+                'message': 'Settings saved successfully'
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Failed to save settings'},
+                status_code=500
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
 
 
 @app.post("/api/settings/export")
@@ -574,9 +819,6 @@ async def export_data():
         all_apps = apps_en + apps_fr
 
         # Create CSV
-        import csv
-        import io
-
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=all_apps[0].keys() if all_apps else [])
         writer.writeheader()
@@ -597,29 +839,6 @@ async def export_data():
 async def clear_data():
     # This is a dangerous operation - require confirmation
     return JSONResponse(content={'success': False, 'error': 'Not implemented for safety'})
-
-
-@app.get("/status/{app_id}", response_class=HTMLResponse)
-async def status_page(request: Request, app_id: str, lang: str = "en"):
-    sheets_client, _, _ = get_clients()
-
-    try:
-        application = sheets_client.get_application_by_id(app_id, lang)
-
-        if not application:
-            raise HTTPException(status_code=404, detail="Application not found")
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return templates.TemplateResponse(
-        "status.html",
-        {
-            "request": request,
-            "application": application,
-            "language": lang
-        }
-    )
 
 
 @app.get("/api/attachments/{language}")

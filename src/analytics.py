@@ -3,7 +3,6 @@ from typing import Dict, List, Any
 from collections import defaultdict
 import pytz
 from src.sheets import SheetsClient
-from src.config import TIMEZONE
 
 
 class AnalyticsEngine:
@@ -17,9 +16,16 @@ class AnalyticsEngine:
 
         # Calculate stats
         total = len(all_apps)
-        sent = len([a for a in all_apps if a.get('status') == 'Sent'])
+        sent = len([a for a in all_apps if a.get('status') in ['Sent', 'Follow-up Sent']])
         pending = len([a for a in all_apps if a.get('status') == 'Pending'])
         bounced = len([a for a in all_apps if a.get('status') == 'Bounced'])
+
+        # REAL SUCCESS RATE - Count positive responses
+        successful = len([a for a in all_apps if a.get('status') in [
+            'Interview Scheduled', 'Interview Complete', 'Call Received',
+            'Offer', 'Hired'
+        ]])
+        success_rate = (successful / total * 100) if total > 0 else 0
 
         # Language distribution
         lang_dist = {
@@ -37,7 +43,8 @@ class AnalyticsEngine:
             'bounced': bounced,
             'language_distribution': lang_dist,
             'total_followups': total_followups,
-            'success_rate': (sent / total * 100) if total > 0 else 0
+            'success_rate': success_rate,
+            'successful': successful
         }
 
     def get_timeline_data(self, days: int = 30) -> Dict[str, List]:
@@ -47,13 +54,17 @@ class AnalyticsEngine:
 
         # Group by date
         date_counts = defaultdict(int)
-        tz = pytz.timezone(TIMEZONE)
+
+        # Use UTC for consistent calculations
+        tz = pytz.UTC
 
         for app in all_apps:
             sent_date = app.get('sent_date')
             if sent_date:
                 try:
                     dt = datetime.fromisoformat(sent_date)
+                    if dt.tzinfo is None:
+                        dt = tz.localize(dt)
                     date_key = dt.date().isoformat()
                     date_counts[date_key] += 1
                 except:
@@ -130,3 +141,23 @@ class AnalyticsEngine:
             'max_followups': max(followup_distribution.keys()) if followup_distribution else 0,
             'avg_followups': sum(k * v for k, v in followup_distribution.items()) / len(all_apps) if all_apps else 0
         }
+
+    def get_response_breakdown(self) -> Dict[str, int]:
+        """Get detailed breakdown of responses."""
+        apps_en = self.sheets.get_applications_for_followup('en')
+        apps_fr = self.sheets.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
+
+        breakdown = {
+            'total': len(all_apps),
+            'sent': len([a for a in all_apps if a.get('status') in ['Sent', 'Follow-up Sent']]),
+            'call_received': len([a for a in all_apps if a.get('status') == 'Call Received']),
+            'interview_scheduled': len([a for a in all_apps if a.get('status') == 'Interview Scheduled']),
+            'interview_complete': len([a for a in all_apps if a.get('status') == 'Interview Complete']),
+            'offer': len([a for a in all_apps if a.get('status') == 'Offer']),
+            'hired': len([a for a in all_apps if a.get('status') == 'Hired']),
+            'rejected': len([a for a in all_apps if a.get('status') == 'Rejected']),
+            'no_response': len([a for a in all_apps if a.get('status') in ['Pending', 'Sent']])
+        }
+
+        return breakdown

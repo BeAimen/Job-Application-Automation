@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Application Status - Job Application Automation{% endblock %}
+{% block title %}Application Status - JobFlow{% endblock %}
 
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
@@ -11,16 +11,64 @@
     </div>
 
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        <!-- Header -->
+        <!-- Header with Actions -->
         <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600">
             <div class="flex items-center justify-between">
-                <div class="text-white">
-                    <h2 class="text-2xl font-bold">{{ application.company }}</h2>
+                <div class="text-white flex-1">
+                    <h2 class="text-2xl font-bold editable-field"
+                        data-field="company"
+                        data-id="{{ application.id }}"
+                        data-lang="{{ language }}"
+                        onclick="makeEditable(this)">
+                        {{ application.company }}
+                    </h2>
                     <p class="text-blue-100 mt-1">{{ application.position }}</p>
                 </div>
-                <span class="status-badge-large status-{{ application.status.lower().replace(' ', '-') }}">
-                    {{ application.status }}
-                </span>
+                <div class="flex items-center space-x-3">
+                    <select id="statusSelect"
+                            class="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium"
+                            onchange="updateStatus('{{ application.id }}', '{{ language }}', this.value)">
+                        {% for status in status_options %}
+                        <option value="{{ status }}" {% if application.status == status %}selected{% endif %}>
+                            {{ status }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="confirmDelete('{{ application.id }}', '{{ language }}')"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Call Received')"
+                        class="btn-sm bg-blue-100 text-blue-700 hover:bg-blue-200">
+                    <i class="fas fa-phone mr-1"></i> Got a Call
+                </button>
+                <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Interview Scheduled')"
+                        class="btn-sm bg-green-100 text-green-700 hover:bg-green-200">
+                    <i class="fas fa-calendar-check mr-1"></i> Interview Scheduled
+                </button>
+                <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Interview Complete')"
+                        class="btn-sm bg-purple-100 text-purple-700 hover:bg-purple-200">
+                    <i class="fas fa-user-check mr-1"></i> Interview Done
+                </button>
+                <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Offer')"
+                        class="btn-sm bg-yellow-100 text-yellow-700 hover:bg-yellow-200">
+                    <i class="fas fa-envelope-open-text mr-1"></i> Received Offer
+                </button>
+                <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Hired')"
+                        class="btn-sm bg-green-100 text-green-700 hover:bg-green-200">
+                    <i class="fas fa-briefcase mr-1"></i> Hired!
+                </button>
+                <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Rejected')"
+                        class="btn-sm bg-red-100 text-red-700 hover:bg-red-200">
+                    <i class="fas fa-times-circle mr-1"></i> Rejected
+                </button>
             </div>
         </div>
 
@@ -32,16 +80,18 @@
                     <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
                         <i class="fas fa-address-card mr-2"></i> Contact Information
                     </h3>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Email</div>
-                        <div class="detail-value">
-                            <a href="mailto:{{ application.email }}" class="text-blue-600 hover:text-blue-800">
-                                {{ application.email }}
-                            </a>
+                        <div class="detail-value editable-field"
+                             data-field="email"
+                             data-id="{{ application.id }}"
+                             data-lang="{{ language }}"
+                             onclick="makeEditable(this)">
+                            {{ application.email }}
                         </div>
                     </div>
-                    
+
                     {% if application.phone %}
                     <div class="detail-row">
                         <div class="detail-label">Phone</div>
@@ -52,7 +102,7 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     {% if application.website %}
                     <div class="detail-row">
                         <div class="detail-label">Website</div>
@@ -70,12 +120,12 @@
                     <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
                         <i class="fas fa-info-circle mr-2"></i> Application Details
                     </h3>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Application ID</div>
                         <div class="detail-value font-mono text-sm">{{ application.id }}</div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Sent Date</div>
                         <div class="detail-value">
@@ -86,7 +136,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Follow-ups Sent</div>
                         <div class="detail-value">
@@ -95,7 +145,7 @@
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">Next Follow-up</div>
                         <div class="detail-value">
@@ -106,7 +156,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="detail-row">
                         <div class="detail-label">CV Attachment</div>
                         <div class="detail-value">
@@ -123,10 +173,15 @@
             <!-- Email Body -->
             {% if application.body %}
             <div class="mt-8">
-                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">
-                    <i class="fas fa-envelope mr-2"></i> Email Body
-                </h3>
-                <div class="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200">{{ application.body }}</div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+                        <i class="fas fa-envelope mr-2"></i> Email Body
+                    </h3>
+                    <button onclick="editEmailBody('{{ application.id }}', '{{ language }}')" class="text-sm text-blue-600 hover:text-blue-700">
+                        <i class="fas fa-edit mr-1"></i> Edit
+                    </button>
+                </div>
+                <div id="emailBody" class="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200">{{ application.body }}</div>
             </div>
             {% endif %}
 
@@ -142,4 +197,222 @@
         </div>
     </div>
 </div>
+
+<style>
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.detail-value {
+    color: #111827;
+    font-size: 0.875rem;
+    text-align: right;
+}
+
+.editable-field {
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.15s;
+}
+
+.editable-field:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+</style>
+
+<script>
+function makeEditable(element) {
+    const originalValue = element.textContent.trim();
+    const field = element.dataset.field;
+    const id = element.dataset.id;
+    const lang = element.dataset.lang;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = originalValue;
+    input.className = 'form-input py-1 px-2 text-sm';
+    input.style.width = '100%';
+
+    element.textContent = '';
+    element.appendChild(input);
+    input.focus();
+    input.select();
+
+    const save = async () => {
+        const newValue = input.value.trim();
+
+        if (newValue !== originalValue && newValue) {
+            const formData = new FormData();
+            formData.append('field', field);
+            formData.append('value', newValue);
+            formData.append('language', lang);
+
+            try {
+                const response = await fetch(`/api/applications/${id}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    element.textContent = newValue;
+                    showToast('Updated successfully', 'success');
+                } else {
+                    element.textContent = originalValue;
+                    showToast('Failed to update', 'error');
+                }
+            } catch (error) {
+                element.textContent = originalValue;
+                showToast('Network error', 'error');
+            }
+        } else {
+            element.textContent = originalValue;
+        }
+    };
+
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            save();
+        } else if (e.key === 'Escape') {
+            element.textContent = originalValue;
+        }
+    });
+}
+
+async function updateStatus(appId, language, status) {
+    const formData = new FormData();
+    formData.append('field', 'status');
+    formData.append('value', status);
+    formData.append('language', language);
+
+    try {
+        const response = await fetch(`/api/applications/${appId}`, {
+            method: 'PUT',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Status updated to: ' + status, 'success');
+        } else {
+            showToast('Failed to update status', 'error');
+        }
+    } catch (error) {
+        showToast('Network error', 'error');
+    }
+}
+
+async function quickStatusUpdate(appId, language, status) {
+    document.getElementById('statusSelect').value = status;
+    await updateStatus(appId, language, status);
+}
+
+function editEmailBody(appId, language) {
+    const bodyDiv = document.getElementById('emailBody');
+    const originalBody = bodyDiv.textContent.trim();
+
+    const textarea = document.createElement('textarea');
+    textarea.value = originalBody;
+    textarea.rows = 12;
+    textarea.className = 'form-input w-full';
+
+    bodyDiv.replaceWith(textarea);
+    textarea.focus();
+
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Save';
+    saveButton.className = 'btn-primary mt-2 mr-2';
+    saveButton.onclick = async () => {
+        const newBody = textarea.value;
+
+        const formData = new FormData();
+        formData.append('field', 'body');
+        formData.append('value', newBody);
+        formData.append('language', language);
+
+        try {
+            const response = await fetch(`/api/applications/${appId}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const newDiv = document.createElement('div');
+                newDiv.id = 'emailBody';
+                newDiv.className = 'bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200';
+                newDiv.textContent = newBody;
+
+                textarea.replaceWith(newDiv);
+                saveButton.remove();
+                cancelButton.remove();
+
+                showToast('Email body updated', 'success');
+            } else {
+                showToast('Failed to update', 'error');
+            }
+        } catch (error) {
+            showToast('Network error', 'error');
+        }
+    };
+
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.className = 'btn-secondary mt-2';
+    cancelButton.onclick = () => {
+        const newDiv = document.createElement('div');
+        newDiv.id = 'emailBody';
+        newDiv.className = 'bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200';
+        newDiv.textContent = originalBody;
+
+        textarea.replaceWith(newDiv);
+        saveButton.remove();
+        cancelButton.remove();
+    };
+
+    textarea.after(saveButton);
+    textarea.after(cancelButton);
+}
+
+async function confirmDelete(appId, language) {
+    if (confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
+        const formData = new FormData();
+        formData.append('language', language);
+
+        try {
+            const response = await fetch(`/api/applications/${appId}`, {
+                method: 'DELETE',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('Application deleted', 'success');
+                setTimeout(() => {
+                    window.location.href = `/applications?lang=${language}`;
+                }, 1500);
+            } else {
+                showToast('Failed to delete: ' + data.error, 'error');
+            }
+        } catch (error) {
+            showToast('Network error', 'error');
+        }
+    }
+}
+</script>
 {% endblock %}

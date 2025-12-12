@@ -1,0 +1,8 @@
+{
+  "default_language": "fr",
+  "followup_days": 7,
+  "timezone": "Europe/Paris",
+  "email_delay": 2,
+  "max_retries": 3,
+  "auto_followup": false
+}
