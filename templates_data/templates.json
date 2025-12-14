@@ -11,24 +11,26 @@
       "language": "en",
       "body": "Dear Hiring Manager,\r\n\r\nI am excited to apply for the [Position] role at [Company]. My hands-on experience with PLCs, SCADA/HMI systems, and field instrumentation aligns strongly with your operations.\r\n\r\nDuring my internship at Sonatrach GL1K, I redesigned the air dryer control system using Siemens TIA Portal and WinCC, resolving pressure instability and synchronization faults. The redesign led to a 20% improvement in air quality and reduced system downtime by 15%, formalized as my engineering thesis.\r\n\r\nI’m also experienced with HART-based calibration, loop checks, and interpreting ISA-compliant diagrams. My trilingual fluency (Arabic, English, French) enables me to work effectively across technical and team environments.\r\n\r\nI’m available immediately and eager to contribute to [Company] standards of technical excellence and safe field performance.\r\n\r\nSincerely,\r\nAimen Berkane",
       "is_default": true
-    },
-    "sdg": {
-      "name": "sdg",
-      "language": "fr",
-      "body": "dfsh",
-      "is_default": false
     }
   },
   "followup": {
     "polite_en": {
       "name": "Follow-up #1 - Polite",
       "language": "en",
-      "body": "Dear Hiring Manager,\n\nI hope this email finds you well. I wanted to follow up on my application for the [Position] position at [Company], which I submitted on [Date].\n\nI remain very interested in this opportunity and would welcome the chance to discuss how my experience aligns with your team's needs.\n\nPlease let me know if you need any additional information from my end.\n\nThank you for your time and consideration.\n\nBest regards"
+      "body": "Dear Hiring Manager,\r\n\r\nI hope this email finds you well. I wanted to follow up on my application for the [Position] position at [Company], which I submitted on [Date].\r\n\r\nI remain very interested in this opportunity and would welcome the chance to discuss how my experience aligns with your team's needs.\r\n\r\nPlease let me know if you need any additional information from my end.\r\n\r\nThank you for your time and consideration.\r\n\r\nBest regards",
+      "is_default": false
     },
     "assertive_en": {
       "name": "Follow-up #2 - Assertive",
       "language": "en",
-      "body": "Dear Hiring Manager,\n\nI am following up regarding my application for the [Position] position. I am very enthusiastic about the opportunity to join [Company] and believe my skills would be a strong match for your requirements.\n\nI would appreciate an update on the hiring timeline and next steps. I am happy to provide any additional information or schedule a conversation at your convenience.\n\nLooking forward to your response.\n\nBest regards"
+      "body": "Dear Hiring Manager,\r\n\r\nI am following up regarding my application for the [Position] position. I am very enthusiastic about the opportunity to join [Company] and believe my skills would be a strong match for your requirements.\r\n\r\nI would appreciate an update on the hiring timeline and next steps. I am happy to provide any additional information or schedule a conversation at your convenience.\r\n\r\nLooking forward to your response.\r\n\r\nBest regards",
+      "is_default": false
+    },
+    "xzcb": {
+      "name": "Relance #2 – Ton affirméd",
+      "language": "fr",
+      "body": "Madame, Monsieur,\r\n\r\nJe me permets de vous relancer concernant ma candidature au poste de [Position]. Je suis très enthousiaste à l’idée de rejoindre [Company] et convaincu que mes compétences correspondent fortement à vos besoins.\r\n\r\nJe vous serais reconnaissant de bien vouloir m’indiquer l’état d’avancement du processus de recrutement ainsi que les prochaines étapes. Je reste bien entendu disponible pour fournir toute information complémentaire ou convenir d’un échange à votre convenance.\r\n\r\nDans l’attente de votre retour.\r\n\r\nCordialement,",
+      "is_default": false
     }
   }
 }
