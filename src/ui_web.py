@@ -180,6 +180,7 @@ async def home(request: Request):
 @app.get("/send", response_class=HTMLResponse)
 async def send_page(request: Request, template: Optional[str] = None):
     _, _, attachment_selector = get_clients()
+    template_manager = get_template_manager()
 
     # Get available attachments
     attachments_en = [f.name for f in attachment_selector.get_attachments('en')]
@@ -188,31 +189,46 @@ async def send_page(request: Request, template: Optional[str] = None):
     # Get default language from settings
     default_language = settings_manager.get_setting('default_language', 'en')
 
-    # Template loading (optional template query param format: "category:template_id")
+    # Template loading
     template_body_en = None
     template_body_fr = None
+    template_position_en = None
+    template_position_fr = None
     template_language = default_language
 
     if template:
+        # Load specific template from query param (format: "category:template_id")
         try:
-            template_manager = get_template_manager()
             category, template_id = template.split(':', 1)
             template_data = template_manager.get_template(category, template_id)
             if template_data:
                 template_language = template_data.get('language', 'en')
                 if template_language == 'en':
                     template_body_en = template_data.get('body', '')
+                    template_position_en = template_data.get('position', '')
                 else:
                     template_body_fr = template_data.get('body', '')
+                    template_position_fr = template_data.get('position', '')
         except Exception:
-            # ignore malformed template param
-            pass
+            pass  # Ignore malformed template param
+    else:
+        # Load default templates for both languages
+        default_en = template_manager.get_default_template('application', 'en')
+        default_fr = template_manager.get_default_template('application', 'fr')
 
-    # Get default values (template overrides default body if provided)
+        if default_en:
+            template_body_en = default_en.get('body', '')
+            template_position_en = default_en.get('position', '')
+
+        if default_fr:
+            template_body_fr = default_fr.get('body', '')
+            template_position_fr = default_fr.get('position', '')
+
+    # Fallback to config defaults if no templates found
     default_body_en = template_body_en or get_default_body('en')
     default_body_fr = template_body_fr or get_default_body('fr')
-    default_position_en = get_default_position('en')
-    default_position_fr = get_default_position('fr')
+    default_position_en = template_position_en or get_default_position('en')
+    default_position_fr = template_position_fr or get_default_position('fr')
 
     return templates.TemplateResponse(
         "send.html",
@@ -513,14 +529,16 @@ async def save_template(
         name: str = Form(...),
         language: str = Form(...),
         position: Optional[str] = Form(None),
-        body: str = Form(...)
+        body: str = Form(...),
+        is_default: str = Form('false')
 ):
     template_manager = get_template_manager()
 
     template_data = {
         'name': name,
         'language': language,
-        'body': body
+        'body': body,
+        'is_default': is_default.lower() == 'true'
     }
 
     if position:

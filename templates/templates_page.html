@@ -24,33 +24,8 @@
                 Application Templates
             </h2>
         </div>
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for id, template in templates.application.items() %}
-            <div class="template-card group">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-gray-900">{{ template.name }}</h3>
-                        <p class="text-xs text-gray-500 mt-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if template.language == 'en' %}bg-blue-100 text-blue-700{% else %}bg-purple-100 text-purple-700{% endif %}">
-                                <i class="fas fa-language mr-1"></i>{{ template.language.upper() }}
-                            </span>
-                        </p>
-                    </div>
-                    <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editTemplate('application', '{{ id }}')" class="text-gray-400 hover:text-blue-600">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteTemplate('application', '{{ id }}')" class="text-gray-400 hover:text-red-600">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <p class="text-sm text-gray-600 line-clamp-3 mb-3">{{ template.body[:120] }}...</p>
-                <button onclick="useTemplate('application', '{{ id }}')" class="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    Use Template →
-                </button>
-            </div>
-            {% endfor %}
+        <div id="applicationTemplates" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Templates will be rendered here -->
         </div>
     </div>
 
@@ -62,164 +37,296 @@
                 Follow-up Templates
             </h2>
         </div>
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for id, template in templates.followup.items() %}
-            <div class="template-card group">
-                <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-gray-900">{{ template.name }}</h3>
-                        <p class="text-xs text-gray-500 mt-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if template.language == 'en' %}bg-blue-100 text-blue-700{% else %}bg-purple-100 text-purple-700{% endif %}">
-                                <i class="fas fa-language mr-1"></i>{{ template.language.upper() }}
-                            </span>
-                        </p>
-                    </div>
-                    <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editTemplate('followup', '{{ id }}')" class="text-gray-400 hover:text-blue-600">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteTemplate('followup', '{{ id }}')" class="text-gray-400 hover:text-red-600">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <p class="text-sm text-gray-600 line-clamp-3 mb-3">{{ template.body[:120] }}...</p>
-                <button onclick="useTemplate('followup', '{{ id }}')" class="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    Use Template →
-                </button>
-            </div>
-            {% endfor %}
+        <div id="followupTemplates" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Templates will be rendered here -->
         </div>
     </div>
 </div>
 
 <!-- Template Editor Modal -->
-<div id="templateModal" class="modal hidden">
-    <div class="modal-content modal-content-large">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-gray-900">
-                <span id="modalTitle">Create New Template</span>
-            </h3>
-            <button onclick="closeTemplateModal()" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
-            </button>
+<div id="templateModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all">
+                <!-- Modal Header -->
+                <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                            <i class="fas fa-edit text-blue-600 mr-3"></i>
+                            <span id="modalTitle">Create New Template</span>
+                        </h3>
+                        <button onclick="closeTemplateModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <form id="templateForm" class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                    <input type="hidden" id="templateCategory" name="category">
+                    <input type="hidden" id="templateId" name="id">
+
+                    <!-- Category Selection -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-tag mr-2 text-blue-500"></i>Template Type
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" onclick="selectCategory('application')"
+                                    id="categoryApplication"
+                                    class="category-btn group relative p-5 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-lg transition-all duration-200 bg-white">
+                                <div class="flex items-center justify-center mb-2">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                                        <i class="fas fa-paper-plane text-2xl text-blue-500 group-hover:text-white transition-colors"></i>
+                                    </div>
+                                </div>
+                                <span class="font-semibold text-gray-700 group-hover:text-blue-600">Application</span>
+                                <p class="text-xs text-gray-500 mt-1">Initial outreach email</p>
+                            </button>
+                            <button type="button" onclick="selectCategory('followup')"
+                                    id="categoryFollowup"
+                                    class="category-btn group relative p-5 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-200 bg-white">
+                                <div class="flex items-center justify-center mb-2">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-colors">
+                                        <i class="fas fa-redo text-2xl text-green-500 group-hover:text-white transition-colors"></i>
+                                    </div>
+                                </div>
+                                <span class="font-semibold text-gray-700 group-hover:text-green-600">Follow-up</span>
+                                <p class="text-xs text-gray-500 mt-1">Reminder email</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Template Name -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-font mr-2 text-purple-500"></i>Template Name
+                        </label>
+                        <input type="text" id="templateName" name="name" required
+                               placeholder="e.g., Professional Application - Tech Industry"
+                               class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all outline-none">
+                    </div>
+
+                    <!-- Language -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-language mr-2 text-green-500"></i>Language
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="relative cursor-pointer group">
+                                <input type="radio" name="language" value="en" id="langEn" required class="peer sr-only">
+                                <div class="flex items-center p-4 bg-gray-50 border-2 border-gray-200 rounded-xl peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-md transition-all duration-200">
+                                    <div class="flex-shrink-0 mr-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center peer-checked:bg-blue-500">
+                                            <i class="fas fa-flag-usa text-xl text-blue-500 peer-checked:text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">English</p>
+                                        <p class="text-xs text-gray-500">US/UK format</p>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer group">
+                                <input type="radio" name="language" value="fr" id="langFr" required class="peer sr-only">
+                                <div class="flex items-center p-4 bg-gray-50 border-2 border-gray-200 rounded-xl peer-checked:border-purple-500 peer-checked:bg-purple-50 peer-checked:shadow-md transition-all duration-200">
+                                    <div class="flex-shrink-0 mr-3">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center peer-checked:bg-purple-500">
+                                            <i class="fas fa-flag text-xl text-purple-500 peer-checked:text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">French</p>
+                                        <p class="text-xs text-gray-500">FR format</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Email Body -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-envelope mr-2 text-yellow-500"></i>Email Body
+                        </label>
+                        <div class="relative">
+                            <textarea id="templateBody" name="body" rows="12" required
+                                      placeholder="Dear Hiring Manager,&#10;&#10;I am writing to express my interest in the [Position] position at [Company]...&#10;&#10;You can use placeholders:&#10;- [Company] for company name&#10;- [Position] for position title"
+                                      class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all outline-none font-mono text-sm"></textarea>
+                            <div class="absolute bottom-3 right-3 text-xs text-gray-400" id="charCount">0 characters</div>
+                        </div>
+                        <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-sm text-blue-800 flex items-start">
+                                <i class="fas fa-info-circle text-blue-500 mr-2 mt-0.5"></i>
+                                <span>
+                                    Use placeholders:
+                                    <code class="bg-blue-100 px-2 py-1 rounded text-blue-900 font-semibold">[Company]</code> and
+                                    <code class="bg-blue-100 px-2 py-1 rounded text-blue-900 font-semibold">[Position]</code>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-xl">
+                    <button type="button" onclick="closeTemplateModal()" class="btn-secondary">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="button" onclick="submitTemplate()" id="submitBtn" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>Save Template
+                    </button>
+                </div>
+            </div>
         </div>
-
-        <form id="templateForm" class="space-y-5">
-            <input type="hidden" id="templateCategory" name="category">
-            <input type="hidden" id="templateId" name="id">
-
-            <!-- Category Selection -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Template Type</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="button" onclick="selectCategory('application')"
-                            id="categoryApplication"
-                            class="category-btn flex items-center justify-center p-4 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all">
-                        <i class="fas fa-paper-plane text-2xl text-blue-500 mr-3"></i>
-                        <span class="font-medium">Application</span>
-                    </button>
-                    <button type="button" onclick="selectCategory('followup')"
-                            id="categoryFollowup"
-                            class="category-btn flex items-center justify-center p-4 border-2 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all">
-                        <i class="fas fa-redo text-2xl text-green-500 mr-3"></i>
-                        <span class="font-medium">Follow-up</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Template Name -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Template Name</label>
-                <input type="text" id="templateName" name="name" required
-                       placeholder="e.g., Professional Application - Tech Industry"
-                       class="form-input">
-            </div>
-
-            <!-- Language -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
-                        <input type="radio" name="language" value="en" id="langEn" required class="mr-3">
-                        <i class="fas fa-flag-usa text-blue-500 mr-2"></i>
-                        <span class="font-medium">English</span>
-                    </label>
-                    <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-all">
-                        <input type="radio" name="language" value="fr" id="langFr" required class="mr-3">
-                        <i class="fas fa-flag text-purple-500 mr-2"></i>
-                        <span class="font-medium">French</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Email Body -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Email Body</label>
-                <textarea id="templateBody" name="body" rows="12" required
-                          placeholder="Dear Hiring Manager,&#10;&#10;I am writing to express my interest in the [Position] position at [Company]...&#10;&#10;You can use placeholders:&#10;- [Company] for company name&#10;- [Position] for position title"
-                          class="form-input"></textarea>
-                <p class="mt-2 text-sm text-gray-500">
-                    <i class="fas fa-info-circle text-blue-500"></i>
-                    Use placeholders: <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code> and <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code>
-                </p>
-            </div>
-
-            <!-- Submit Buttons -->
-            <div class="flex justify-end space-x-3 pt-4 border-t">
-                <button type="button" onclick="closeTemplateModal()" class="btn-secondary">Cancel</button>
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-save mr-2"></i> Save Template
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+let templatesData = {{ templates | tojson }};
 let selectedCategory = 'application';
+let isEditMode = false;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    renderTemplates();
+
+    // Character counter
+    const bodyInput = document.getElementById('templateBody');
+    if (bodyInput) {
+        bodyInput.addEventListener('input', updateCharCount);
+    }
+});
+
+function updateCharCount() {
+    const body = document.getElementById('templateBody').value;
+    const count = body.length;
+    document.getElementById('charCount').textContent = `${count} characters`;
+}
+
+function renderTemplates() {
+    renderCategoryTemplates('application');
+    renderCategoryTemplates('followup');
+}
+
+function renderCategoryTemplates(category) {
+    const container = document.getElementById(category === 'application' ? 'applicationTemplates' : 'followupTemplates');
+    const templates = templatesData[category] || {};
+
+    if (Object.keys(templates).length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+                <p class="text-gray-500">No templates yet</p>
+                <button onclick="showNewTemplateModal(); selectCategory('${category}')" class="mt-4 text-blue-600 hover:text-blue-700 font-medium">
+                    <i class="fas fa-plus mr-1"></i> Create your first template
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = Object.entries(templates).map(([id, template]) => {
+        const isDefault = template.is_default || false;
+        return `
+        <div class="template-card group bg-white border-2 ${isDefault ? (template.language === 'en' ? 'border-blue-500 bg-blue-50' : 'border-purple-500 bg-purple-50') : 'border-gray-200'} rounded-xl p-5 hover:border-${template.language === 'en' ? 'blue' : 'purple'}-500 hover:shadow-lg transition-all duration-200 relative">
+            ${isDefault ? `
+                <div class="absolute top-3 right-3 bg-gradient-to-r ${template.language === 'en' ? 'from-blue-500 to-blue-600' : 'from-purple-500 to-purple-600'} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center">
+                    <i class="fas fa-star mr-1"></i>DEFAULT
+                </div>
+            ` : ''}
+            <div class="flex items-start justify-between mb-3 ${isDefault ? 'pr-24' : ''}">
+                <div class="flex-1">
+                    <h3 class="font-bold text-gray-900 mb-2 flex items-center">
+                        <span class="truncate">${escapeHtml(template.name)}</span>
+                    </h3>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${template.language === 'en' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">
+                        <i class="fas ${template.language === 'en' ? 'fa-flag-usa' : 'fa-flag'} mr-1"></i>${template.language.toUpperCase()}
+                    </span>
+                </div>
+                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="editTemplate('${category}', '${id}')"
+                            class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit template">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteTemplate('${category}', '${id}')"
+                            class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete template">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed">${escapeHtml(template.body.substring(0, 120))}...</p>
+            <div class="flex gap-2">
+                <button onclick="setAsDefault('${category}', '${id}', '${template.language}')"
+                        class="flex-1 px-4 py-2 ${isDefault ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white hover:shadow-md'} font-medium rounded-lg transition-all duration-200"
+                        ${isDefault ? 'disabled' : ''}>
+                    <i class="fas fa-star mr-2"></i>${isDefault ? 'Is Default' : 'Set Default'}
+                </button>
+                <button onclick="useTemplate('${category}', '${id}')"
+                        class="flex-1 px-4 py-2 bg-gradient-to-r ${template.language === 'en' ? 'from-blue-500 to-blue-600' : 'from-purple-500 to-purple-600'} text-white font-medium rounded-lg hover:shadow-md transition-all duration-200">
+                    <i class="fas fa-paper-plane mr-2"></i>Use Now
+                </button>
+            </div>
+        </div>
+    `;
+    }).join('');
+}
 
 function showNewTemplateModal() {
+    isEditMode = false;
     document.getElementById('templateModal').classList.remove('hidden');
     document.getElementById('templateForm').reset();
     document.getElementById('templateId').value = '';
     document.getElementById('modalTitle').textContent = 'Create New Template';
     selectCategory('application');
+    updateCharCount();
+
+    // Reset submit button state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Template';
 }
 
 function closeTemplateModal() {
-    document.getElementById('templateModal').classList.add('hidden');
+    const modal = document.getElementById('templateModal');
+    // Add fade-out animation
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.style.opacity = '1';
+    }, 200);
 }
 
 function selectCategory(category) {
     selectedCategory = category;
     document.getElementById('templateCategory').value = category;
 
-    // Update button styles
     const appBtn = document.getElementById('categoryApplication');
     const followupBtn = document.getElementById('categoryFollowup');
 
+    appBtn.classList.remove('border-blue-500', 'bg-blue-50', 'shadow-lg');
+    followupBtn.classList.remove('border-green-500', 'bg-green-50', 'shadow-lg');
+
     if (category === 'application') {
-        appBtn.classList.add('border-blue-500', 'bg-blue-50');
-        followupBtn.classList.remove('border-green-500', 'bg-green-50');
+        appBtn.classList.add('border-blue-500', 'bg-blue-50', 'shadow-lg');
     } else {
-        followupBtn.classList.add('border-green-500', 'bg-green-50');
-        appBtn.classList.remove('border-blue-500', 'bg-blue-50');
+        followupBtn.classList.add('border-green-500', 'bg-green-50', 'shadow-lg');
     }
 }
 
-async function editTemplate(category, id) {
+function editTemplate(category, id) {
+    isEditMode = true;
     showNewTemplateModal();
     document.getElementById('modalTitle').textContent = 'Edit Template';
     document.getElementById('templateId').value = id;
     selectCategory(category);
 
-    // Load template data
-    const templates = {{ templates | tojson }};
-    const template = templates[category][id];
-
+    const template = templatesData[category][id];
     document.getElementById('templateName').value = template.name;
     document.getElementById('templateBody').value = template.body;
 
@@ -228,45 +335,36 @@ async function editTemplate(category, id) {
     } else {
         document.getElementById('langFr').checked = true;
     }
+
+    updateCharCount();
+
+    // Ensure button is in correct state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Template';
 }
 
-async function deleteTemplate(category, id) {
-    if (confirm('Are you sure you want to delete this template?')) {
-        try {
-            const response = await fetch(`/api/templates/${category}/${id}`, {
-                method: 'DELETE'
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                showToast('Template deleted successfully', 'success');
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                showToast('Failed to delete template', 'error');
-            }
-        } catch (error) {
-            showToast('Network error: ' + error.message, 'error');
-        }
-    }
-}
-
-function useTemplate(category, id) {
-    window.location.href = `/send?template=${category}:${id}`;
-}
-
-// Form submission
-document.getElementById('templateForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const submitButton = e.target.querySelector('button[type="submit"]');
-
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
-
+async function setAsDefault(category, id, language) {
     try {
-        const response = await fetch('/api/templates', {
+        // Remove default from all templates in same category and language
+        Object.keys(templatesData[category]).forEach(templateId => {
+            if (templatesData[category][templateId].language === language) {
+                templatesData[category][templateId].is_default = false;
+            }
+        });
+
+        // Set this template as default
+        templatesData[category][id].is_default = true;
+
+        // Save to backend
+        const formData = new FormData();
+        formData.append('category', category);
+        formData.append('name', templatesData[category][id].name);
+        formData.append('language', language);
+        formData.append('body', templatesData[category][id].body);
+        formData.append('is_default', 'true');
+
+        const response = await fetch(`/api/templates/${category}/${id}`, {
             method: 'POST',
             body: formData
         });
@@ -274,18 +372,141 @@ document.getElementById('templateForm').addEventListener('submit', async (e) => 
         const data = await response.json();
 
         if (data.success) {
-            showToast('Template saved successfully!', 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            // Also update all other templates to remove default flag
+            for (const [otherId, template] of Object.entries(templatesData[category])) {
+                if (otherId !== id && template.language === language) {
+                    const otherFormData = new FormData();
+                    otherFormData.append('category', category);
+                    otherFormData.append('name', template.name);
+                    otherFormData.append('language', template.language);
+                    otherFormData.append('body', template.body);
+                    otherFormData.append('is_default', 'false');
+
+                    await fetch(`/api/templates/${category}/${otherId}`, {
+                        method: 'POST',
+                        body: otherFormData
+                    });
+                }
+            }
+
+            renderTemplates();
+            showToast(`Template set as default for ${language.toUpperCase()} ${category}s!`, 'success');
         } else {
-            showToast('Failed to save template: ' + data.error, 'error');
+            showToast('Failed to set default template', 'error');
         }
     } catch (error) {
         showToast('Network error: ' + error.message, 'error');
-    } finally {
-        submitButton.disabled = false;
-        submitButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save Template';
     }
-});
+}
+
+async function submitTemplate() {
+    const form = document.getElementById('templateForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    const originalContent = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+    try {
+        const formData = new FormData(form);
+        const category = formData.get('category');
+        const templateId = formData.get('id');
+
+        // Generate ID for new templates
+        const id = templateId || formData.get('name').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+        // Add is_default flag (preserve existing if editing)
+        const isDefault = templatesData[category] && templatesData[category][id]
+            ? templatesData[category][id].is_default || false
+            : false;
+        formData.append('is_default', isDefault.toString());
+
+        const response = await fetch(`/api/templates/${category}/${id}`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Update local data IMMEDIATELY
+            if (!templatesData[category]) {
+                templatesData[category] = {};
+            }
+            templatesData[category][id] = {
+                name: formData.get('name'),
+                language: formData.get('language'),
+                body: formData.get('body'),
+                is_default: isDefault
+            };
+
+            // Reset button state BEFORE closing modal
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalContent;
+
+            // Close modal (user sees instant response)
+            closeTemplateModal();
+
+            // Re-render templates IMMEDIATELY
+            renderTemplates();
+
+            // Show success toast
+            showToast(isEditMode ? 'Template updated successfully!' : 'Template created successfully!', 'success');
+        } else {
+            // Reset button on error
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalContent;
+            showToast('Failed to save template: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        // Reset button on network error
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+
+async function deleteTemplate(category, id) {
+    if (!confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/templates/${category}/${id}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Template deleted successfully', 'success');
+
+            // Update local data
+            delete templatesData[category][id];
+
+            // Re-render
+            renderTemplates();
+        } else {
+            showToast('Failed to delete template', 'error');
+        }
+    } catch (error) {
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+
+function useTemplate(category, id) {
+    window.location.href = `/send?template=${category}:${id}`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 // Close modal on outside click
 document.getElementById('templateModal').addEventListener('click', (e) => {
@@ -293,23 +514,76 @@ document.getElementById('templateModal').addEventListener('click', (e) => {
         closeTemplateModal();
     }
 });
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('templateModal');
+        if (!modal.classList.contains('hidden')) {
+            closeTemplateModal();
+        }
+    }
+});
 </script>
 
 <style>
-.category-btn.selected {
-    border-width: 2px;
-}
-
-.modal-content {
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
 .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.category-btn.selected {
+    border-width: 2px;
+}
+
+/* Smooth modal animation */
+.modal {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal .relative {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Custom scrollbar for modal */
+#templateForm::-webkit-scrollbar {
+    width: 8px;
+}
+
+#templateForm::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#templateForm::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+#templateForm::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 </style>
 {% endblock %}

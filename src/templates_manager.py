@@ -37,6 +37,7 @@ class TemplateManager:
                     "name": "Instrumentation Engineer – Targeted (EN)",
                     "language": "en",
                     "position": "Instrumentation Engineer",
+                    "is_default": True,
                     "body": (
                         "Dear Hiring Manager,\n\n"
                         "I am excited to apply for the [Position] role at [Company]. "
@@ -66,25 +67,26 @@ class TemplateManager:
                     "name": "Ingénieur Instrumentation – Ciblé (FR)",
                     "language": "fr",
                     "position": "Ingénieur Instrumentation",
+                    "is_default": True,
                     "body": (
                         "Madame, Monsieur,\n\n"
                         "Je souhaite vous présenter ma candidature au poste de [Position] au sein "
                         "de [Company]. Mon expérience pratique en instrumentation industrielle, "
                         "automatisme (PLC) et systèmes SCADA/HMI correspond étroitement aux "
                         "exigences des environnements industriels et pétroliers.\n\n"
-                        "Lors de mon stage chez Sonatrach (GL1K), j’ai réalisé la refonte complète "
-                        "du système de contrôle d’un sécheur d’air industriel à l’aide de Siemens "
+                        "Lors de mon stage chez Sonatrach (GL1K), j'ai réalisé la refonte complète "
+                        "du système de contrôle d'un sécheur d'air industriel à l'aide de Siemens "
                         "TIA Portal et WinCC. Cette intervention a permis de corriger des "
                         "instabilités de pression et des défauts de synchronisation, entraînant "
-                        "une amélioration de 20 % de la qualité de l’air comprimé et une réduction "
+                        "une amélioration de 20 % de la qualité de l'air comprimé et une réduction "
                         "de 15 % des arrêts système. Ce travail a été validé comme projet de fin "
-                        "d’études.\n\n"
-                        "Je dispose d’une expérience terrain en calibration HART, loop checking, "
-                        "assistance FAT/SAT ainsi qu’en lecture et interprétation des schémas P&ID "
-                        "et normes ISA. Je suis à l’aise dans les environnements de terrain et le "
+                        "d'études.\n\n"
+                        "Je dispose d'une expérience terrain en calibration HART, loop checking, "
+                        "assistance FAT/SAT ainsi qu'en lecture et interprétation des schémas P&ID "
+                        "et normes ISA. Je suis à l'aise dans les environnements de terrain et le "
                         "travail en coordination avec les équipes exploitation, maintenance et "
                         "sécurité.\n\n"
-                        "Trilingue (arabe, anglais, français), je m’intègre efficacement dans des "
+                        "Trilingue (arabe, anglais, français), je m'intègre efficacement dans des "
                         "équipes techniques multiculturelles. Disponible immédiatement, je suis "
                         "motivé à contribuer aux standards de performance et de sécurité de "
                         "[Company].\n\n"
@@ -98,6 +100,7 @@ class TemplateManager:
                 "polite_en": {
                     "name": "Follow-up – Polite (EN)",
                     "language": "en",
+                    "is_default": True,
                     "body": (
                         "Dear Hiring Manager,\n\n"
                         "I hope you are doing well. I am writing to follow up on my application "
@@ -113,6 +116,7 @@ class TemplateManager:
                 "assertive_en": {
                     "name": "Follow-up – Assertive (EN)",
                     "language": "en",
+                    "is_default": False,
                     "body": (
                         "Dear Hiring Manager,\n\n"
                         "I am following up regarding my application for the [Position] role at "
@@ -121,6 +125,23 @@ class TemplateManager:
                         "I would appreciate an update on the hiring process and next steps. "
                         "Please let me know if any additional information is needed.\n\n"
                         "Kind regards,\n"
+                        "Aimen Berkane"
+                    ),
+                },
+
+                "polite_fr": {
+                    "name": "Follow-up – Poli (FR)",
+                    "language": "fr",
+                    "is_default": True,
+                    "body": (
+                        "Madame, Monsieur,\n\n"
+                        "J'espère que vous allez bien. Je me permets de revenir vers vous "
+                        "concernant ma candidature pour le poste de [Position] chez [Company].\n\n"
+                        "Je reste très intéressé par cette opportunité et serais ravi de "
+                        "pouvoir échanger avec vous sur la façon dont mon expérience pourrait "
+                        "contribuer à votre équipe.\n\n"
+                        "Je vous remercie de votre attention.\n\n"
+                        "Cordialement,\n"
                         "Aimen Berkane"
                     ),
                 },
@@ -138,9 +159,24 @@ class TemplateManager:
     def get_template(self, category: str, template_id: str) -> Optional[Dict]:
         return self.templates.get(category, {}).get(template_id)
 
+    def get_default_template(self, category: str, language: str) -> Optional[Dict]:
+        """Get the default template for a specific category and language."""
+        templates = self.templates.get(category, {})
+        for template_id, template in templates.items():
+            if template.get('language') == language and template.get('is_default', False):
+                return {**template, 'id': template_id}
+        return None
+
     def save_template(self, category: str, template_id: str, template_data: Dict):
         if category not in self.templates:
             self.templates[category] = {}
+
+        # If setting as default, remove default flag from other templates with same language
+        if template_data.get('is_default', False):
+            language = template_data.get('language')
+            for tid, tmpl in self.templates[category].items():
+                if tmpl.get('language') == language and tid != template_id:
+                    self.templates[category][tid]['is_default'] = False
 
         self.templates[category][template_id] = template_data
         self._save_templates()
