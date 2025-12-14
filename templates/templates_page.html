@@ -471,6 +471,24 @@ async function submitTemplate() {
 }
 
 async function deleteTemplate(category, id) {
+    const template = templatesData[category][id];
+
+    // Check if this is the last template for this language
+    const sameLanguageTemplates = Object.values(templatesData[category]).filter(
+        t => t.language === template.language
+    );
+
+    if (sameLanguageTemplates.length === 1) {
+        showToast(`Cannot delete: You must have at least one ${template.language.toUpperCase()} template`, 'warning');
+        return;
+    }
+
+    // Cannot delete default template
+    if (template.is_default) {
+        showToast('Cannot delete the default template. Set another template as default first.', 'warning');
+        return;
+    }
+
     if (!confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
         return;
     }
@@ -483,13 +501,13 @@ async function deleteTemplate(category, id) {
         const data = await response.json();
 
         if (data.success) {
-            showToast('Template deleted successfully', 'success');
-
-            // Update local data
+            // Update local data IMMEDIATELY
             delete templatesData[category][id];
 
-            // Re-render
+            // Re-render IMMEDIATELY (no page refresh needed)
             renderTemplates();
+
+            showToast('Template deleted successfully', 'success');
         } else {
             showToast('Failed to delete template', 'error');
         }

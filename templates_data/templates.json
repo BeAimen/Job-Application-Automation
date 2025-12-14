@@ -11,6 +11,12 @@
       "language": "en",
       "body": "Dear Hiring Manager,\r\n\r\nI am excited to apply for the [Position] role at [Company]. My hands-on experience with PLCs, SCADA/HMI systems, and field instrumentation aligns strongly with your operations.\r\n\r\nDuring my internship at Sonatrach GL1K, I redesigned the air dryer control system using Siemens TIA Portal and WinCC, resolving pressure instability and synchronization faults. The redesign led to a 20% improvement in air quality and reduced system downtime by 15%, formalized as my engineering thesis.\r\n\r\nI’m also experienced with HART-based calibration, loop checks, and interpreting ISA-compliant diagrams. My trilingual fluency (Arabic, English, French) enables me to work effectively across technical and team environments.\r\n\r\nI’m available immediately and eager to contribute to [Company] standards of technical excellence and safe field performance.\r\n\r\nSincerely,\r\nAimen Berkane",
       "is_default": true
+    },
+    "sdg": {
+      "name": "sdg",
+      "language": "fr",
+      "body": "dfsh",
+      "is_default": false
     }
   },
   "followup": {
