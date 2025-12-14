@@ -42,6 +42,7 @@ credentials
 credentials.*
 **/credentials
 **/credentials.*
+token.json
 
 # ===============================
 # Env files

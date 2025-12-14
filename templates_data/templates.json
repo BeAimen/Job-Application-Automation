@@ -17,10 +17,10 @@
       "language": "fr",
       "body": "Madame, Monsieurr,\r\n\r\nJe vous écris pour exprimer mon intérêt pour le poste de [Position] chez [Company]. Fort de mon expérience en ingénierie d'instrumentation et en systèmes de contrôle, je suis convaincu de pouvoir apporter une contribution significative à votre équipe.\r\n\r\nMon expérience comprend :\r\n- Conception et mise en œuvre de systèmes de contrôle pour les processus industriels\r\n- Dépannage et maintenance d'équipements d'instrumentation\r\n- Collaboration avec des équipes interfonctionnelles pour optimiser les performances des systèmes\r\n\r\nVous trouverez mon CV en pièce jointe. Je serais ravi de discuter de la façon dont mes compétences correspondent à vos besoins.\r\n\r\nJe vous remercie de l'attention que vous porterez à ma candidature.\r\n\r\nCordialement"
     },
-    "xcbcx": {
-      "name": "xcbcx",
+    "generic_english": {
+      "name": "Generic English",
       "language": "en",
-      "body": "xznvxxxx"
+      "body": "Dear Hiring Manager, I am excited to apply for the [Postion] role at [Company]. My hands-on experience with PLCs, SCADA/HMI systems, and field instrumentation aligns strongly with your operations. During my internship at Sonatrach GL1K, I redesigned the air dryer control system using Siemens TIA Portal and WinCC, resolving pressure instability and synchronization faults. The redesign led to a 20% improvement in air quality and reduced system downtime by 15%, formalized as my engineering thesis. I’m also experienced with HART-based calibration, loop checks, and interpreting ISA-compliant diagrams. My trilingual fluency (Arabic, English, French) enables me to work effectively across technical and team environments. I’m available immediately and eager to contribute to the company's standards of technical excellence and safe field performance. Sincerely, Aimen Berkane"
     }
   },
   "followup": {

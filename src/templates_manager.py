@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from pathlib import Path
 import json
 from src.config import PROJECT_ROOT
@@ -6,116 +6,130 @@ from src.config import PROJECT_ROOT
 
 class TemplateManager:
     def __init__(self):
-        self.templates_dir = PROJECT_ROOT / 'templates_data'
+        self.templates_dir = PROJECT_ROOT / "templates_data"
         self.templates_dir.mkdir(exist_ok=True)
-        self.templates_file = self.templates_dir / 'templates.json'
+
+        self.templates_file = self.templates_dir / "templates.json"
         self._load_templates()
 
+    # ------------------------------------------------------------------
+    # INTERNAL LOAD / SAVE
+    # ------------------------------------------------------------------
     def _load_templates(self):
         if self.templates_file.exists():
-            with open(self.templates_file, 'r', encoding='utf-8') as f:
+            with open(self.templates_file, "r", encoding="utf-8") as f:
                 self.templates = json.load(f)
         else:
             self.templates = self._get_default_templates()
             self._save_templates()
 
     def _save_templates(self):
-        with open(self.templates_file, 'w', encoding='utf-8') as f:
+        with open(self.templates_file, "w", encoding="utf-8") as f:
             json.dump(self.templates, f, indent=2, ensure_ascii=False)
 
+    # ------------------------------------------------------------------
+    # DEFAULT TEMPLATES
+    # ------------------------------------------------------------------
     def _get_default_templates(self) -> Dict:
         return {
-            'application': {
-                'generic_en': {
-                    'name': 'Generic English',
-                    'language': 'en',
-                    'position': 'Instrumentation Engineer',
-                    'body': '''Dear Hiring Manager,
-
-I am writing to express my interest in the [Position] position at [Company]. With my background in instrumentation engineering and control systems, I believe I would be a valuable addition to your team.
-
-My experience includes:
-- Designing and implementing control systems for industrial processes
-- Troubleshooting and maintaining instrumentation equipment
-- Collaborating with cross-functional teams to optimize system performance
-
-I have attached my CV for your review. I would welcome the opportunity to discuss how my skills and experience align with your needs.
-
-Thank you for your consideration.
-
-Best regards'''
+            "application": {
+                "instrumentation_en": {
+                    "name": "Instrumentation Engineer – Targeted (EN)",
+                    "language": "en",
+                    "position": "Instrumentation Engineer",
+                    "body": (
+                        "Dear Hiring Manager,\n\n"
+                        "I am excited to apply for the [Position] role at [Company]. "
+                        "My hands-on experience with PLC programming, SCADA/HMI systems, "
+                        "and field instrumentation aligns strongly with industrial operations "
+                        "and safety-critical environments.\n\n"
+                        "During my internship at Sonatrach (GL1K), I redesigned an industrial "
+                        "air dryer control system using Siemens TIA Portal and WinCC. "
+                        "This redesign resolved pressure instability and synchronization faults, "
+                        "resulting in a 20% improvement in compressed air quality and a 15% "
+                        "reduction in system downtime. The project was validated and formalized "
+                        "as my engineering thesis.\n\n"
+                        "I have practical experience with HART-based calibration, loop checks, "
+                        "FAT/SAT support, and interpreting P&IDs and ISA-compliant control diagrams. "
+                        "I am comfortable working in field conditions and collaborating closely "
+                        "with operations, maintenance, and safety teams.\n\n"
+                        "Fluent in Arabic, English, and French, I communicate effectively across "
+                        "technical and multicultural environments. I am available immediately "
+                        "and highly motivated to contribute to [Company]'s standards of "
+                        "operational excellence and safe field performance.\n\n"
+                        "Sincerely,\n"
+                        "Aimen Berkane"
+                    ),
                 },
-                'generic_fr': {
-                    'name': 'Generic French',
-                    'language': 'fr',
-                    'position': 'Ingénieur en Instrumentation',
-                    'body': '''Madame, Monsieur,
 
-Je vous écris pour exprimer mon intérêt pour le poste de [Position] chez [Company]. Fort de mon expérience en ingénierie d'instrumentation et en systèmes de contrôle, je suis convaincu de pouvoir apporter une contribution significative à votre équipe.
-
-Mon expérience comprend :
-- Conception et mise en œuvre de systèmes de contrôle pour les processus industriels
-- Dépannage et maintenance d'équipements d'instrumentation
-- Collaboration avec des équipes interfonctionnelles pour optimiser les performances des systèmes
-
-Vous trouverez mon CV en pièce jointe. Je serais ravi de discuter de la façon dont mes compétences correspondent à vos besoins.
-
-Je vous remercie de l'attention que vous porterez à ma candidature.
-
-Cordialement'''
+                "instrumentation_fr": {
+                    "name": "Ingénieur Instrumentation – Ciblé (FR)",
+                    "language": "fr",
+                    "position": "Ingénieur Instrumentation",
+                    "body": (
+                        "Madame, Monsieur,\n\n"
+                        "Je souhaite vous présenter ma candidature au poste de [Position] au sein "
+                        "de [Company]. Mon expérience pratique en instrumentation industrielle, "
+                        "automatisme (PLC) et systèmes SCADA/HMI correspond étroitement aux "
+                        "exigences des environnements industriels et pétroliers.\n\n"
+                        "Lors de mon stage chez Sonatrach (GL1K), j’ai réalisé la refonte complète "
+                        "du système de contrôle d’un sécheur d’air industriel à l’aide de Siemens "
+                        "TIA Portal et WinCC. Cette intervention a permis de corriger des "
+                        "instabilités de pression et des défauts de synchronisation, entraînant "
+                        "une amélioration de 20 % de la qualité de l’air comprimé et une réduction "
+                        "de 15 % des arrêts système. Ce travail a été validé comme projet de fin "
+                        "d’études.\n\n"
+                        "Je dispose d’une expérience terrain en calibration HART, loop checking, "
+                        "assistance FAT/SAT ainsi qu’en lecture et interprétation des schémas P&ID "
+                        "et normes ISA. Je suis à l’aise dans les environnements de terrain et le "
+                        "travail en coordination avec les équipes exploitation, maintenance et "
+                        "sécurité.\n\n"
+                        "Trilingue (arabe, anglais, français), je m’intègre efficacement dans des "
+                        "équipes techniques multiculturelles. Disponible immédiatement, je suis "
+                        "motivé à contribuer aux standards de performance et de sécurité de "
+                        "[Company].\n\n"
+                        "Cordialement,\n"
+                        "Aimen Berkane"
+                    ),
                 },
-                'senior_engineer_en': {
-                    'name': 'Senior Engineer (English)',
-                    'language': 'en',
-                    'position': 'Senior Instrumentation Engineer',
-                    'body': '''Dear Hiring Manager,
-
-I am excited to apply for the Senior [Position] role at [Company]. With over X years of experience in industrial automation and instrumentation, I have developed expertise in leading complex projects and mentoring engineering teams.
-
-Key achievements:
-- Led implementation of SCADA systems for Fortune 500 clients
-- Reduced system downtime by 40% through predictive maintenance strategies
-- Managed cross-functional teams of 10+ engineers
-
-I am particularly drawn to [Company]'s innovative approach and would be thrilled to contribute my expertise to your continued success.
-
-Please find my detailed CV attached. I look forward to discussing this opportunity.
-
-Best regards'''
-                }
             },
-            'followup': {
-                'polite_en': {
-                    'name': 'Follow-up #1 - Polite',
-                    'language': 'en',
-                    'body': '''Dear Hiring Manager,
 
-I hope this email finds you well. I wanted to follow up on my application for the [Position] position at [Company], which I submitted on [Date].
-
-I remain very interested in this opportunity and would welcome the chance to discuss how my experience aligns with your team's needs.
-
-Please let me know if you need any additional information from my end.
-
-Thank you for your time and consideration.
-
-Best regards'''
+            "followup": {
+                "polite_en": {
+                    "name": "Follow-up – Polite (EN)",
+                    "language": "en",
+                    "body": (
+                        "Dear Hiring Manager,\n\n"
+                        "I hope you are doing well. I am writing to follow up on my application "
+                        "for the [Position] role at [Company], submitted on [Date].\n\n"
+                        "I remain very interested in this opportunity and would welcome the "
+                        "chance to discuss how my background could support your team.\n\n"
+                        "Thank you for your time and consideration.\n\n"
+                        "Best regards,\n"
+                        "Aimen Berkane"
+                    ),
                 },
-                'assertive_en': {
-                    'name': 'Follow-up #2 - Assertive',
-                    'language': 'en',
-                    'body': '''Dear Hiring Manager,
 
-I am following up regarding my application for the [Position] position. I am very enthusiastic about the opportunity to join [Company] and believe my skills would be a strong match for your requirements.
-
-I would appreciate an update on the hiring timeline and next steps. I am happy to provide any additional information or schedule a conversation at your convenience.
-
-Looking forward to your response.
-
-Best regards'''
-                }
-            }
+                "assertive_en": {
+                    "name": "Follow-up – Assertive (EN)",
+                    "language": "en",
+                    "body": (
+                        "Dear Hiring Manager,\n\n"
+                        "I am following up regarding my application for the [Position] role at "
+                        "[Company]. I am highly enthusiastic about the opportunity and confident "
+                        "that my technical background aligns well with your requirements.\n\n"
+                        "I would appreciate an update on the hiring process and next steps. "
+                        "Please let me know if any additional information is needed.\n\n"
+                        "Kind regards,\n"
+                        "Aimen Berkane"
+                    ),
+                },
+            },
         }
 
+    # ------------------------------------------------------------------
+    # PUBLIC API
+    # ------------------------------------------------------------------
     def get_all_templates(self, category: Optional[str] = None) -> Dict:
         if category:
             return self.templates.get(category, {})
