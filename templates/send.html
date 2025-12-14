@@ -13,25 +13,69 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Email Addresses <span class="text-red-500">*</span>
                 </label>
-                <textarea
-                    name="emails"
-                    rows="3"
-                    required
-                    placeholder="Enter email addresses (one per line or comma-separated)"
-                    class="form-input"
-                ></textarea>
+                <div class="relative">
+                    <div class="absolute top-3 left-3 pointer-events-none">
+                        <i class="fas fa-envelope text-gray-400"></i>
+                    </div>
+                    <textarea
+                        name="emails"
+                        rows="3"
+                        required
+                        placeholder="hr@tesla.com&#10;jobs@microsoft.com&#10;careers@apple.com"
+                        class="form-input pl-10 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    ></textarea>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">
+                    <i class="fas fa-info-circle text-blue-500"></i>
+                    One per line or comma-separated
+                </p>
             </div>
 
             <!-- Language -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="block text-sm font-medium text-gray-700 mb-3">
                     Language <span class="text-red-500">*</span>
                 </label>
-                <select name="language" required class="form-input" onchange="handleLanguageChange(this.value)" id="languageSelect">
-                    <option value="both" {% if default_language == 'both' %}selected{% endif %}>Both (sends 2 emails per recipient)</option>
-                    <option value="en" {% if default_language == 'en' %}selected{% endif %}>English</option>
-                    <option value="fr" {% if default_language == 'fr' %}selected{% endif %}>French</option>
-                </select>
+                <div class="grid grid-cols-3 gap-3">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="language" value="en"
+                               {% if default_language == 'en' %}checked{% endif %}
+                               onchange="handleLanguageChange(this.value)"
+                               class="peer sr-only">
+                        <div class="p-4 border-2 rounded-lg text-center transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300">
+                            <i class="fas fa-flag-usa text-3xl text-blue-500 mb-2"></i>
+                            <p class="font-semibold text-gray-900">English</p>
+                            <p class="text-xs text-gray-500 mt-1">Single email</p>
+                        </div>
+                    </label>
+
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="language" value="fr"
+                               {% if default_language == 'fr' %}checked{% endif %}
+                               onchange="handleLanguageChange(this.value)"
+                               class="peer sr-only">
+                        <div class="p-4 border-2 rounded-lg text-center transition-all peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300">
+                            <i class="fas fa-flag text-3xl text-purple-500 mb-2"></i>
+                            <p class="font-semibold text-gray-900">French</p>
+                            <p class="text-xs text-gray-500 mt-1">Single email</p>
+                        </div>
+                    </label>
+
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="language" value="both"
+                               {% if default_language == 'both' %}checked{% endif %}
+                               onchange="handleLanguageChange(this.value)"
+                               class="peer sr-only">
+                        <div class="p-4 border-2 rounded-lg text-center transition-all peer-checked:border-gradient peer-checked:bg-gradient-to-br peer-checked:from-blue-50 peer-checked:to-purple-50 hover:border-gray-400">
+                            <div class="flex justify-center space-x-1 text-2xl mb-2">
+                                <i class="fas fa-flag-usa text-blue-500"></i>
+                                <i class="fas fa-flag text-purple-500"></i>
+                            </div>
+                            <p class="font-semibold text-gray-900">Both</p>
+                            <p class="text-xs text-gray-500 mt-1">2 emails each</p>
+                        </div>
+                    </label>
+                </div>
             </div>
 
             <!-- Company -->
@@ -52,39 +96,53 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Position
                 </label>
-                <input
-                    type="text"
-                    name="position"
-                    id="positionSingleInput"
-                    value="{{ default_position_en }}"
-                    class="form-input"
-                />
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-briefcase text-gray-400"></i>
+                    </div>
+                    <input
+                        type="text"
+                        name="position"
+                        id="positionSingleInput"
+                        value="{{ default_position_en }}"
+                        placeholder="Software Engineer, Data Analyst, etc."
+                        class="form-input pl-10 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    />
+                </div>
             </div>
 
             <!-- Position - Dual fields for both -->
             <div id="positionDual" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Position
+                    Position <span class="text-red-500">*</span>
                 </label>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">English</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                        <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
+                            <i class="fas fa-flag-usa mr-2"></i>English
+                        </label>
                         <input
                             type="text"
                             name="position_en"
                             id="positionEnInput"
                             value="{{ default_position_en }}"
+                            required
                             class="form-input"
+                            placeholder="Instrumentation Engineer"
                         />
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">French</label>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
+                        <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
+                            <i class="fas fa-flag mr-2"></i>French
+                        </label>
                         <input
                             type="text"
                             name="position_fr"
                             id="positionFrInput"
                             value="{{ default_position_fr }}"
+                            required
                             class="form-input"
+                            placeholder="Ingénieur en Instrumentation"
                         />
                     </div>
                 </div>
@@ -107,18 +165,22 @@
                 <label class="block text-sm font-medium text-gray-700 mb-3">
                     Attachments (CV) <span class="text-red-500">*</span>
                 </label>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">English</label>
-                        <select name="attachment_en" class="form-input" id="attachmentEnSelect">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                        <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
+                            <i class="fas fa-flag-usa mr-2"></i>English CV
+                        </label>
+                        <select name="attachment_en" required class="form-input" id="attachmentEnSelect">
                             {% for att in attachments_en %}
                             <option value="{{ att }}" {% if loop.first %}selected{% endif %}>{{ att }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">French</label>
-                        <select name="attachment_fr" class="form-input" id="attachmentFrSelect">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
+                        <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
+                            <i class="fas fa-flag mr-2"></i>French CV
+                        </label>
+                        <select name="attachment_fr" required class="form-input" id="attachmentFrSelect">
                             {% for att in attachments_fr %}
                             <option value="{{ att }}" {% if loop.first %}selected{% endif %}>{{ att }}</option>
                             {% endfor %}
@@ -146,30 +208,39 @@
             <!-- Body - Dual fields -->
             <div id="bodyDual" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Email Body
+                    Email Body <span class="text-red-500">*</span>
                 </label>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">English</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                        <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
+                            <i class="fas fa-flag-usa mr-2"></i>English Body
+                        </label>
                         <textarea
                             name="body_en"
                             id="bodyEnInput"
-                            rows="8"
+                            rows="10"
+                            required
                             class="form-input"
+                            placeholder="Dear Hiring Manager..."
                         >{{ default_body_en }}</textarea>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">French</label>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
+                        <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
+                            <i class="fas fa-flag mr-2"></i>French Body
+                        </label>
                         <textarea
                             name="body_fr"
                             id="bodyFrInput"
-                            rows="8"
+                            rows="10"
+                            required
                             class="form-input"
+                            placeholder="Madame, Monsieur..."
                         >{{ default_body_fr }}</textarea>
                     </div>
                 </div>
                 <p class="mt-2 text-sm text-gray-500">
-                    Placeholders: [Company], [Position]
+                    <i class="fas fa-info-circle text-blue-500"></i>
+                    Placeholders: <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code> and <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code>
                 </p>
             </div>
 
@@ -222,6 +293,14 @@ const attachmentsData = {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     const defaultLanguage = '{{ default_language }}';
+
+    // Set the default language radio button
+    const radioButton = document.querySelector(`input[name="language"][value="${defaultLanguage}"]`);
+    if (radioButton) {
+        radioButton.checked = true;
+    }
+
+    // Trigger the change to update the UI
     handleLanguageChange(defaultLanguage);
 });
 
@@ -234,29 +313,52 @@ function handleLanguageChange(language) {
     const attachmentDual = document.getElementById('attachmentDual');
 
     if (language === 'both') {
+        // Show dual fields
         positionSingle.classList.add('hidden');
         positionDual.classList.remove('hidden');
         bodySingle.classList.add('hidden');
         bodyDual.classList.remove('hidden');
         attachmentSingle.classList.add('hidden');
         attachmentDual.classList.remove('hidden');
+
+        // Remove required from single attachment, add to dual
         document.getElementById('attachmentSelect').removeAttribute('required');
+        document.getElementById('attachmentEnSelect').setAttribute('required', 'required');
+        document.getElementById('attachmentFrSelect').setAttribute('required', 'required');
+
+        // Update attachment dropdowns
+        updateAttachmentSelect('en', 'attachmentEnSelect');
+        updateAttachmentSelect('fr', 'attachmentFrSelect');
     } else {
+        // Show single fields
         positionSingle.classList.remove('hidden');
         positionDual.classList.add('hidden');
         bodySingle.classList.remove('hidden');
         bodyDual.classList.add('hidden');
         attachmentSingle.classList.remove('hidden');
         attachmentDual.classList.add('hidden');
+
+        // Set required on single attachment
         document.getElementById('attachmentSelect').setAttribute('required', 'required');
+        document.getElementById('attachmentEnSelect').removeAttribute('required');
+        document.getElementById('attachmentFrSelect').removeAttribute('required');
+
+        // Update attachment dropdown for selected language
         updateAttachmentSelect(language, 'attachmentSelect');
 
-        // Update body for selected language
-        if (language === 'fr') {
-            document.getElementById('bodySingleInput').value = '{{ default_body_fr | safe }}';
-        } else {
-            document.getElementById('bodySingleInput').value = '{{ default_body_en | safe }}';
-        }
+        // Update position and body for selected language
+        const defaultPositions = {
+            'en': '{{ default_position_en }}',
+            'fr': '{{ default_position_fr }}'
+        };
+
+        const defaultBodies = {
+            'en': `{{ default_body_en | safe }}`,
+            'fr': `{{ default_body_fr | safe }}`
+        };
+
+        document.getElementById('positionSingleInput').value = defaultPositions[language] || defaultPositions['en'];
+        document.getElementById('bodySingleInput').value = defaultBodies[language] || defaultBodies['en'];
     }
 }
 

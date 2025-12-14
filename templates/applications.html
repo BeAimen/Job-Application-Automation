@@ -6,14 +6,14 @@
 <div class="px-4 py-6 sm:px-0">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Applications</h1>
-        
+
         <!-- Language Toggle -->
         <div class="flex space-x-2">
-            <a href="/applications?lang=en{% if current_status %}&status={{ current_status }}{% endif %}" 
+            <a href="/applications?lang=en{% if current_status %}&status={{ current_status }}{% endif %}"
                class="px-4 py-2 rounded-lg {% if current_lang == 'en' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
                 <i class="fas fa-flag-usa mr-1"></i> English
             </a>
-            <a href="/applications?lang=fr{% if current_status %}&status={{ current_status }}{% endif %}" 
+            <a href="/applications?lang=fr{% if current_status %}&status={{ current_status }}{% endif %}"
                class="px-4 py-2 rounded-lg {% if current_lang == 'fr' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
                 <i class="fas fa-flag mr-1"></i> French
             </a>
@@ -24,7 +24,7 @@
     <div class="bg-white shadow rounded-lg p-4 mb-6">
         <form method="get" class="flex flex-wrap gap-4 items-end">
             <input type="hidden" name="lang" value="{{ current_lang }}">
-            
+
             <div class="flex-1 min-w-[200px]">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
                 <select name="status" class="form-input" onchange="this.form.submit()">
@@ -36,11 +36,11 @@
                     {% endfor %}
                 </select>
             </div>
-            
+
             <button type="submit" class="btn-primary">
                 <i class="fas fa-filter mr-1"></i> Filter
             </button>
-            
+
             {% if current_status %}
             <a href="/applications?lang={{ current_lang }}" class="btn-secondary">
                 <i class="fas fa-times mr-1"></i> Clear
@@ -95,7 +95,7 @@
                             {{ app.next_followup_date[:10] if app.next_followup_date else 'N/A' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="/status/{{ app.id }}?lang={{ current_lang }}" 
+                            <a href="/status/{{ app.id }}?lang={{ current_lang }}"
                                class="text-blue-600 hover:text-blue-900">
                                 <i class="fas fa-eye mr-1"></i> View
                             </a>
@@ -105,7 +105,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
             <div class="text-sm text-gray-700">
                 Showing <span class="font-medium">{{ applications|length }}</span> applications
@@ -117,7 +117,7 @@
             <p class="text-gray-500 text-lg">No applications found</p>
             <p class="text-gray-400 text-sm mt-2">
                 {% if current_status %}
-                Try removing the status filter or 
+                Try removing the status filter or
                 {% endif %}
                 <a href="/send" class="text-blue-600 hover:text-blue-800">send your first application</a>
             </p>

@@ -12,11 +12,15 @@
       "position": "Ingénieur en Instrumentation",
       "body": "Madame, Monsieur,\n\nJe vous écris pour exprimer mon intérêt pour le poste de [Position] chez [Company]. Fort de mon expérience en ingénierie d'instrumentation et en systèmes de contrôle, je suis convaincu de pouvoir apporter une contribution significative à votre équipe.\n\nMon expérience comprend :\n- Conception et mise en œuvre de systèmes de contrôle pour les processus industriels\n- Dépannage et maintenance d'équipements d'instrumentation\n- Collaboration avec des équipes interfonctionnelles pour optimiser les performances des systèmes\n\nVous trouverez mon CV en pièce jointe. Je serais ravi de discuter de la façon dont mes compétences correspondent à vos besoins.\n\nJe vous remercie de l'attention que vous porterez à ma candidature.\n\nCordialement"
     },
-    "senior_engineer_en": {
-      "name": "Senior Engineer (English)",
+    "generic_french": {
+      "name": "Generic French",
+      "language": "fr",
+      "body": "Madame, Monsieurr,\r\n\r\nJe vous écris pour exprimer mon intérêt pour le poste de [Position] chez [Company]. Fort de mon expérience en ingénierie d'instrumentation et en systèmes de contrôle, je suis convaincu de pouvoir apporter une contribution significative à votre équipe.\r\n\r\nMon expérience comprend :\r\n- Conception et mise en œuvre de systèmes de contrôle pour les processus industriels\r\n- Dépannage et maintenance d'équipements d'instrumentation\r\n- Collaboration avec des équipes interfonctionnelles pour optimiser les performances des systèmes\r\n\r\nVous trouverez mon CV en pièce jointe. Je serais ravi de discuter de la façon dont mes compétences correspondent à vos besoins.\r\n\r\nJe vous remercie de l'attention que vous porterez à ma candidature.\r\n\r\nCordialement"
+    },
+    "xcbcx": {
+      "name": "xcbcx",
       "language": "en",
-      "position": "Senior Instrumentation Engineer",
-      "body": "Dear Hiring Manager,\n\nI am excited to apply for the Senior [Position] role at [Company]. With over X years of experience in industrial automation and instrumentation, I have developed expertise in leading complex projects and mentoring engineering teams.\n\nKey achievements:\n- Led implementation of SCADA systems for Fortune 500 clients\n- Reduced system downtime by 40% through predictive maintenance strategies\n- Managed cross-functional teams of 10+ engineers\n\nI am particularly drawn to [Company]'s innovative approach and would be thrilled to contribute my expertise to your continued success.\n\nPlease find my detailed CV attached. I look forward to discussing this opportunity.\n\nBest regards"
+      "body": "xznvxxxx"
     }
   },
   "followup": {

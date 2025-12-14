@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Follow-ups - Job Application Automation{% endblock %}
+{% block title %}Follow-ups - JobFlow{% endblock %}
 {% block nav_followups %}active{% endblock %}
 
 {% block content %}
@@ -8,17 +8,17 @@
         <h1 class="text-3xl font-bold text-gray-900">Follow-ups</h1>
 
         <!-- Language Toggle -->
-        <div class="flex space-x-2">
+        <div class="lang-toggle">
             <a href="/followups?lang=en"
-               class="px-4 py-2 rounded-lg {% if current_lang == 'en' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+               class="lang-toggle-btn {% if current_lang == 'en' %}active-en{% endif %}">
                 <i class="fas fa-flag-usa mr-1"></i> English
             </a>
             <a href="/followups?lang=fr"
-               class="px-4 py-2 rounded-lg {% if current_lang == 'fr' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+               class="lang-toggle-btn {% if current_lang == 'fr' %}active-fr{% endif %}">
                 <i class="fas fa-flag mr-1"></i> French
             </a>
             <a href="/followups?lang=both"
-               class="px-4 py-2 rounded-lg {% if current_lang == 'both' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+               class="lang-toggle-btn {% if current_lang == 'both' %}active-both{% endif %}">
                 <i class="fas fa-globe mr-1"></i> Both
             </a>
         </div>
@@ -30,7 +30,7 @@
             <div>
                 <h2 class="text-lg font-semibold text-gray-900">Process Due Follow-ups</h2>
                 <p class="text-sm text-gray-500 mt-1">
-                    {{ due_applications|length }} application(s) need follow-up
+                    <span class="font-bold text-blue-600">{{ due_applications|length }}</span> application(s) need follow-up
                 </p>
             </div>
 
@@ -50,8 +50,9 @@
 
     <!-- Due Applications Table -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
             <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-clock text-yellow-500 mr-2"></i>
                 Applications Due for Follow-up
             </h3>
         </div>
@@ -61,7 +62,7 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lang</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Language</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
@@ -72,9 +73,9 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for app in due_applications %}
-                    <tr class="hover:bg-gray-50">
+                    <tr class="{% if app.language == 'en' %}lang-row-en hover:bg-blue-50{% else %}lang-row-fr hover:bg-purple-50{% endif %} transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span class="lang-badge lang-badge-{{ app.language }} lang-icon-{{ app.language }}">
                                 {{ app.language.upper() }}
                             </span>
                         </td>
@@ -132,7 +133,7 @@ async function processFollowups(dryRun) {
     resultsDiv.innerHTML = `
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-center">
-                <i class="fas fa-spinner fa-spin text-blue-600 mr-3"></i>
+                <i class="fas fa-spinner fa-spin text-blue-600 mr-3 text-xl"></i>
                 <div>
                     <div class="font-medium text-blue-800">Processing follow-ups...</div>
                     <div class="text-sm text-blue-700 mt-1">This may take a few moments</div>
@@ -189,7 +190,7 @@ function displayResults(stats, dryRun) {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-green-50 rounded-lg p-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-600 text-2xl mr-3"></i>
                         <div>
@@ -199,7 +200,7 @@ function displayResults(stats, dryRun) {
                     </div>
                 </div>
 
-                <div class="bg-yellow-50 rounded-lg p-4">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <i class="fas fa-exclamation-circle text-yellow-600 text-2xl mr-3"></i>
                         <div>
@@ -209,7 +210,7 @@ function displayResults(stats, dryRun) {
                     </div>
                 </div>
 
-                <div class="bg-red-50 rounded-lg p-4">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <i class="fas fa-times-circle text-red-600 text-2xl mr-3"></i>
                         <div>
@@ -230,7 +231,7 @@ function displayResults(stats, dryRun) {
 
         stats.errors.forEach(error => {
             html += `
-                <div class="flex items-start text-sm">
+                <div class="flex items-start text-sm bg-red-50 p-3 rounded">
                     <i class="fas fa-exclamation-triangle text-red-500 mt-0.5 mr-2"></i>
                     <div>
                         <span class="font-medium">${error.email}:</span>

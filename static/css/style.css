@@ -1,15 +1,37 @@
-/* JobFlow - Professional SaaS Styling (FIXED) */
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JobFlow - UI Demo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+/* ===== JOBFLOW BASE STYLES (COMBINED + FIXES) ===== */
+:root {
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-300: #93c5fd;
+  --blue-700: #1d4ed8;
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-300: #d8b4fe;
+  --purple-700: #7e22ce;
+  --muted: #6b7280;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+}
 
 /* ===== SIDEBAR NAVIGATION ===== */
 .nav-item {
     display: flex;
     align-items: center;
     padding: 0.625rem 0.75rem;
-    color: #6b7280;
+    color: var(--muted);
     font-size: 0.875rem;
     font-weight: 500;
     border-radius: 0.5rem;
     transition: all 0.15s;
+    text-decoration: none;
 }
 
 .nav-item i {
@@ -29,8 +51,8 @@
 
 /* ===== STAT CARDS (FIXED - CENTERED ICONS) ===== */
 .stat-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: 1.5rem;
     display: flex;
@@ -51,6 +73,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: #f3f4f6;
 }
 
 .stat-icon i {
@@ -66,7 +89,7 @@
 
 .stat-label {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
     margin-bottom: 0.25rem;
 }
 
@@ -82,17 +105,9 @@
     margin-top: 0.5rem;
 }
 
-.stat-change.positive {
-    color: #059669;
-}
-
-.stat-change.negative {
-    color: #dc2626;
-}
-
-.stat-change.neutral {
-    color: #6b7280;
-}
+.stat-change.positive { color: #059669; }
+.stat-change.negative { color: #dc2626; }
+.stat-change.neutral  { color: var(--muted); }
 
 .stat-action {
     font-size: 0.75rem;
@@ -103,26 +118,26 @@
 }
 
 .stat-card-minimal {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: 1.25rem;
 }
 
 /* ===== CHART CARDS ===== */
 .chart-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     overflow: hidden;
 }
 
 .chart-header {
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    justify-between;
+    justify-content: space-between;
 }
 
 .chart-title {
@@ -139,8 +154,8 @@
 
 /* ===== TEMPLATE CARDS ===== */
 .template-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: 1.25rem;
     transition: all 0.2s;
@@ -154,7 +169,7 @@
 /* ===== ACTIVITY TIMELINE ===== */
 .activity-item {
     display: flex;
-    align-items-start;
+    align-items: flex-start;
     gap: 0.75rem;
     position: relative;
 }
@@ -166,7 +181,7 @@
     top: 1.5rem;
     bottom: -1rem;
     width: 2px;
-    background: #e5e7eb;
+    background: var(--border);
 }
 
 .activity-dot {
@@ -184,7 +199,7 @@
     text-align: left;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -204,9 +219,7 @@
     transition: background-color 0.15s;
 }
 
-.editable:hover {
-    background-color: #f3f4f6;
-}
+.editable:hover { background-color: #f3f4f6; }
 
 .editable.editing {
     background-color: #eff6ff;
@@ -215,8 +228,8 @@
 
 /* ===== LOADING SKELETONS ===== */
 .skeleton-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: 1.5rem;
 }
@@ -277,15 +290,9 @@
     cursor: pointer;
 }
 
-.btn-secondary:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-}
+.btn-secondary:hover { background: #f9fafb; border-color: #9ca3af; }
 
-.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-}
+.btn-sm { padding: 0.5rem 1rem; font-size: 0.8125rem; }
 
 /* ===== FORM INPUTS ===== */
 .form-input {
@@ -306,7 +313,7 @@
 /* ===== TOAST NOTIFICATIONS ===== */
 .toast {
     min-width: 20rem;
-    background: white;
+    background: var(--surface);
     border-radius: 0.5rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     padding: 1rem;
@@ -317,20 +324,14 @@
 }
 
 @keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
 }
 
 .toast-success { border-left: 4px solid #10b981; }
-.toast-error { border-left: 4px solid #ef4444; }
+.toast-error   { border-left: 4px solid #ef4444; }
 .toast-warning { border-left: 4px solid #f59e0b; }
-.toast-info { border-left: 4px solid #3b82f6; }
+.toast-info    { border-left: 4px solid #3b82f6; }
 
 /* ===== MODALS ===== */
 .modal {
@@ -343,13 +344,11 @@
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-.modal.hidden {
-    display: none;
-}
+.modal.hidden { display: none; }
 
 .modal-content {
     position: relative;
-    background: white;
+    background: var(--surface);
     border-radius: 0.75rem;
     padding: 2rem;
     max-width: 32rem;
@@ -359,8 +358,595 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-.modal-content-large {
-    max-width: 48rem;
+.modal-content-large { max-width: 48rem; }
+
+/* ===== STATUS BADGES ===== */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
+}
+
+.status-pending { background-color: #fef3c7; color: #92400e; }
+.status-sent    { background-color: #d1fae5; color: #065f46; }
+.status-follow-up-sent { background-color: #dbeafe; color: #1e40af; }
+.status-bounced  { background-color: #fee2e2; color: #991b1b; }
+.status-failed   { background-color: #fecaca; color: #7f1d1d; }
+.status-draft    { background-color: #e5e7eb; color: #374151; }
+
+/* ===== UTILITIES ===== */
+.line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .stat-card { flex-direction: column; }
+    .chart-card { font-size: 0.875rem; }
+}
+
+/* ===== LANGUAGE COLOR SYSTEM (COMBINED) ===== */
+
+/* Language Badges */
+.lang-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    border: 1px solid;
+}
+
+.lang-badge-en { background-color: var(--blue-50); color: var(--blue-700); border-color: var(--blue-300); }
+.lang-badge-fr { background-color: var(--purple-50); color: var(--purple-700); border-color: var(--purple-300); }
+
+.lang-badge-both {
+    background: linear-gradient(90deg, var(--blue-50) 0%, var(--blue-50) 50%, var(--purple-50) 50%, var(--purple-50) 100%);
+    color: var(--muted);
+    border-color: #d1d5db;
+    font-weight: 700;
+}
+
+/* Language Icon */
+.lang-icon-en::before { content: "🇺🇸"; margin-right: 0.375rem; }
+.lang-icon-fr::before { content: "🇫🇷"; margin-right: 0.375rem; }
+
+/* Language Cards/Sections */
+.lang-card-en { background-color: var(--blue-50); border: 1px solid var(--blue-300); border-radius: 0.5rem; }
+.lang-card-fr { background-color: var(--purple-50); border: 1px solid var(--purple-300); border-radius: 0.5rem; }
+
+/* Language Header Bars */
+.lang-header-en {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+.lang-header-fr {
+    background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+
+/* Language Table Rows */
+.lang-row-en { border-left: 4px solid #3b82f6; }
+.lang-row-fr { border-left: 4px solid #a855f7; }
+
+/* Language Hover Effects */
+.lang-hover-en:hover { background-color: var(--blue-50); border-color: #3b82f6; }
+.lang-hover-fr:hover { background-color: var(--purple-50); border-color: #a855f7; }
+
+/* Language Buttons */
+.lang-btn-en {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.lang-btn-en:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(59,130,246,0.3); }
+
+.lang-btn-fr {
+    background: linear-gradient(to right, #a855f7, #9333ea);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.lang-btn-fr:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(168,85,247,0.3); }
+
+/* Language Toggle Buttons */
+.lang-toggle {
+    display: inline-flex;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.lang-toggle-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+    color: var(--muted);
+}
+.lang-toggle-btn.active-en { background: linear-gradient(to right, #3b82f6, #2563eb); color: white; }
+.lang-toggle-btn.active-fr { background: linear-gradient(to right, #a855f7, #9333ea); color: white; }
+.lang-toggle-btn.active-both { background: linear-gradient(90deg, #3b82f6 0%, #3b82f6 50%, #a855f7 50%, #a855f7 100%); color: white; }
+
+/* Language Status Indicators */
+.lang-indicator { width: 0.5rem; height: 0.5rem; border-radius: 9999px; display: inline-block; margin-right: 0.5rem; }
+.lang-indicator-en { background-color: #3b82f6; }
+.lang-indicator-fr { background-color: #a855f7; }
+
+/* Language Section Dividers */
+.lang-divider-en { height: 2px; background: linear-gradient(to right, transparent, #3b82f6, transparent); margin: 1rem 0; }
+.lang-divider-fr { height: 2px; background: linear-gradient(to right, transparent, #a855f7, transparent); margin: 1rem 0; }
+
+/* Language Info Boxes */
+.lang-info-en { background-color: var(--blue-100); border-left: 4px solid #3b82f6; padding: 1rem; border-radius: 0.375rem; }
+.lang-info-fr { background-color: var(--purple-100); border-left: 4px solid #a855f7; padding: 1rem; border-radius: 0.375rem; }
+
+.text-en { color: var(--blue-700); }
+.text-fr { color: var(--purple-700); }
+
+.bg-en-light { background-color: var(--blue-50); }
+.bg-fr-light { background-color: var(--purple-50); }
+
+.border-en { border-color: #3b82f6; }
+.border-fr { border-color: #a855f7; }
+  </style>
+</head>
+<body style="font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; color:#111827; background:#f8fafc;">
+
+  <div style="max-width:1200px; margin:32px auto; padding:16px;">
+    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="display:flex; gap:12px; align-items:center;">
+        <div style="width:44px; height:44px; background:#2563eb; border-radius:10px; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">JF</div>
+        <div>
+          <h1 style="margin:0; font-size:1.25rem;">JobFlow — Demo</h1>
+          <div style="font-size:0.85rem; color:var(--muted);">Professional SaaS styling + language system</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="lang-toggle" role="tablist" aria-label="Language toggle">
+          <button class="lang-toggle-btn active-en" data-lang="en">English</button>
+          <button class="lang-toggle-btn" data-lang="fr">Français</button>
+          <button class="lang-toggle-btn" data-lang="both">Both</button>
+        </div>
+      </div>
+    </header>
+
+    <main style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items:start;">
+      <aside style="display:flex; flex-direction:column; gap:10px;">
+        <a class="nav-item active" href="#"><i class="fa-solid fa-inbox"></i> Inbox</a>
+        <a class="nav-item" href="#"><i class="fa-solid fa-paper-plane"></i> Sent</a>
+        <a class="nav-item" href="#"><i class="fa-solid fa-clock"></i> Follow-ups</a>
+        <a class="nav-item" href="#"><i class="fa-solid fa-gear"></i> Settings</a>
+
+        <div class="stat-card" style="margin-top:10px;">
+          <div class="stat-icon"><i class="fa-solid fa-envelope"></i></div>
+          <div class="stat-content">
+            <div class="stat-label">Applications sent</div>
+            <div class="stat-value">1,248</div>
+            <div class="stat-change positive">+6.4% from last week</div>
+            <a class="stat-action" href="#">View details</a>
+          </div>
+        </div>
+
+        <div class="template-card" style="margin-top:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:600;">Templates</div>
+              <div style="font-size:0.85rem; color:var(--muted);">Email templates & snippets</div>
+            </div>
+            <button class="btn-secondary btn-sm" id="openTemplateModal">New</button>
+          </div>
+        </div>
+      </aside>
+
+      <section>
+        <div class="chart-card" style="margin-bottom:16px;">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fa-solid fa-chart-line" style="margin-right:8px;"></i> Activity</div>
+            <div style="font-size:0.85rem; color:var(--muted);">Last 30 days</div>
+          </div>
+          <div class="chart-body">
+            <div style="height:160px; display:flex; align-items:center; justify-content:center; color:var(--muted);">[Insert chart here — use your charting library]</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-bottom:16px;">
+          <div class="stat-card" style="flex:1;">
+            <div class="stat-icon" style="background:#fff0f6;"><i class="fa-solid fa-paperclip" style="color:#9f1239"></i></div>
+            <div>
+              <div class="stat-label">Attachments</div>
+              <div class="stat-value">312</div>
+              <div class="stat-change neutral">Stable</div>
+            </div>
+          </div>
+
+          <div class="stat-card" style="flex:1;">
+            <div class="stat-icon" style="background:#eff6ff;"><i class="fa-solid fa-user" style="color:#2563eb"></i></div>
+            <div>
+              <div class="stat-label">Active users</div>
+              <div class="stat-value">92</div>
+              <div class="stat-change positive">+12%</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:600;">Applications</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-secondary">Filter</button>
+              <button class="btn-primary">Compose</button>
+            </div>
+          </div>
+
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr class="table-header">
+                <th class="table-cell">Candidate</th>
+                <th class="table-cell">Position</th>
+                <th class="table-cell">Lang</th>
+                <th class="table-cell">Status</th>
+                <th class="table-cell">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="lang-row-en lang-hover-en">
+                <td class="table-cell">Aimen Berkane</td>
+                <td class="table-cell">Instrumentation Engineer</td>
+                <td class="table-cell"><span class="lang-badge lang-badge-en lang-icon-en">English</span></td>
+                <td class="table-cell"><span class="status-badge status-sent">Sent</span></td>
+                <td class="table-cell">
+                  <button class="btn-secondary btn-sm">View</button>
+                  <button class="btn-primary btn-sm">Resend</button>
+                </td>
+              </tr>
+
+              <tr class="lang-row-fr lang-hover-fr">
+                <td class="table-cell">Marie Dupont</td>
+                <td class="table-cell">Product Designer</td>
+                <td class="table-cell"><span class="lang-badge lang-badge-fr lang-icon-fr">Français</span></td>
+                <td class="table-cell"><span class="status-badge status-follow-up-sent">Follow-up</span></td>
+                <td class="table-cell">
+                  <button class="btn-secondary btn-sm">View</button>
+                </td>
+              </tr>
+
+              <tr class="">
+                <td class="table-cell">Mixed Row</td>
+                <td class="table-cell">Fullstack Dev</td>
+                <td class="table-cell"><span class="lang-badge lang-badge-both">EN + FR</span></td>
+                <td class="table-cell"><span class="status-badge status-pending">Pending</span></td>
+                <td class="table-cell"><button class="btn-secondary btn-sm">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:16px; display:flex; gap:12px; align-items:center;">
+          <div class="lang-info-en" style="flex:1;">
+            <strong>Tip:</strong> English templates have higher open rates for this cohort.
+          </div>
+          <div class="lang-info-fr" style="flex:1;">
+            <strong>Astuce:</strong> Les modèles en français conviennent aux entreprises locales.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: Template composer -->
+  <div class="modal hidden" id="templateModal" aria-hidden="true">
+    <div class="modal-content modal-content-large" role="dialog" aria-modal="true" aria-labelledby="templateTitle">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 id="templateTitle" style="margin:0;">New Template</h3>
+        <button id="closeTemplateModal" style="background:none; border:none; font-size:1.25rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div style="display:grid; gap:10px;">
+        <input type="text" class="form-input" placeholder="Template name" />
+        <select class="form-input">
+          <option>Language — English</option>
+          <option>Language — French</option>
+          <option>Both</option>
+        </select>
+        <textarea class="form-input" rows="6" placeholder="Template body..."></textarea>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn-secondary" id="cancelTemplate">Cancel</button>
+          <button class="btn-primary" id="saveTemplate">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Language Badge Generator
+    function createLangBadge(language, label) {
+        const badges = {
+            'en': '<span class="lang-badge lang-badge-en lang-icon-en">EN</span>',
+            'fr': '<span class="lang-badge lang-badge-fr lang-icon-fr">FR</span>',
+            'both': '<span class="lang-badge lang-badge-both">EN+FR</span>'
+        };
+        return (label ? (badges[language] ? badges[language].replace(/>(.*?)</, '>' + label + '<') : badges['en']) : (badges[language] || badges['en']));
+    }
+
+    // Language/Class helper (returns classname)
+    function getLangClass(language, type = 'badge') {
+        const classes = {
+            badge: { 'en': 'lang-badge lang-badge-en lang-icon-en', 'fr': 'lang-badge lang-badge-fr lang-icon-fr', 'both': 'lang-badge lang-badge-both' },
+            card:  { 'en': 'lang-card-en', 'fr': 'lang-card-fr' },
+            button:{ 'en': 'lang-btn-en', 'fr': 'lang-btn-fr' },
+            row:   { 'en': 'lang-row-en', 'fr': 'lang-row-fr' }
+        };
+        return (classes[type] && classes[type][language]) ? classes[type][language] : (classes[type] ? classes[type]['en'] : '');
+    }
+
+    // Language toggle behavior
+    (function setupLangToggle(){
+      const toggle = document.querySelector('.lang-toggle');
+      if (!toggle) return;
+      toggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.lang-toggle-btn');
+        if (!btn) return;
+        Array.from(toggle.querySelectorAll('.lang-toggle-btn')).forEach(b => {
+          b.classList.remove('active-en','active-fr','active-both');
+        });
+        const lang = btn.dataset.lang || 'en';
+        btn.classList.add(lang === 'en' ? 'active-en' : (lang === 'fr' ? 'active-fr' : 'active-both'));
+      });
+    })();
+
+    // Modal behavior
+    (function setupModal(){
+      const openBtn = document.getElementById('openTemplateModal');
+      const modal = document.getElementById('templateModal');
+      const closeBtn = document.getElementById('closeTemplateModal');
+      const cancelBtn = document.getElementById('cancelTemplate');
+
+      function showModal() { modal.classList.remove('hidden'); modal.setAttribute('aria-hidden','false'); }
+      function hideModal() { modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); }
+
+      if (openBtn) openBtn.addEventListener('click', showModal);
+      if (closeBtn) closeBtn.addEventListener('click', hideModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', hideModal);
+      // close on outside click
+      modal.addEventListener('click', (ev) => { if (ev.target === modal) hideModal(); });
+      // esc to close
+      document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !modal.classList.contains('hidden')) hideModal(); });
+    })();
+  </script>
+</body>
+</html>
+<style>
+/* ===== LANGUAGE COLOR SYSTEM ===== */
+
+/* Language Badges */
+.lang-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    border: 1px solid;
+}
+
+.lang-badge-en {
+    background-color: #eff6ff; /* blue-50 */
+    color: #1d4ed8; /* blue-700 */
+    border-color: #93c5fd; /* blue-300 */
+}
+
+.lang-badge-fr {
+    background-color: #faf5ff; /* purple-50 */
+    color: #7e22ce; /* purple-700 */
+    border-color: #d8b4fe; /* purple-300 */
+}
+
+.lang-badge-both {
+    background: linear-gradient(90deg, #eff6ff 0%, #eff6ff 50%, #faf5ff 50%, #faf5ff 100%);
+    color: #6b7280;
+    border-color: #d1d5db;
+    font-weight: 700;
+}
+
+/* Language Icon */
+.lang-icon-en::before {
+    content: "🇺🇸";
+    margin-right: 0.375rem;
+}
+
+.lang-icon-fr::before {
+    content: "🇫🇷";
+    margin-right: 0.375rem;
+}
+
+/* Language Cards/Sections */
+.lang-card-en {
+    background-color: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 0.5rem;
+}
+
+.lang-card-fr {
+    background-color: #faf5ff;
+    border: 1px solid #d8b4fe;
+    border-radius: 0.5rem;
+}
+
+/* Language Header Bars */
+.lang-header-en {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+
+.lang-header-fr {
+    background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+
+/* Language Table Rows */
+.lang-row-en {
+    border-left: 4px solid #3b82f6;
+}
+
+.lang-row-fr {
+    border-left: 4px solid #a855f7;
+}
+
+/* Language Hover Effects */
+.lang-hover-en:hover {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.lang-hover-fr:hover {
+    background-color: #faf5ff;
+    border-color: #a855f7;
+}
+
+/* Language Buttons */
+.lang-btn-en {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lang-btn-en:hover {
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.lang-btn-fr {
+    background: linear-gradient(to right, #a855f7, #9333ea);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lang-btn-fr:hover {
+    background: linear-gradient(to right, #9333ea, #7e22ce);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.3);
+}
+
+/* Language Toggle Buttons */
+.lang-toggle {
+    display: inline-flex;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.lang-toggle-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+    color: #6b7280;
+}
+
+.lang-toggle-btn.active-en {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    color: white;
+}
+
+.lang-toggle-btn.active-fr {
+    background: linear-gradient(to right, #a855f7, #9333ea);
+    color: white;
+}
+
+.lang-toggle-btn.active-both {
+    background: linear-gradient(90deg, #3b82f6 0%, #3b82f6 50%, #a855f7 50%, #a855f7 100%);
+    color: white;
+}
+
+/* Language Status Indicators */
+.lang-indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.lang-indicator-en {
+    background-color: #3b82f6;
+}
+
+.lang-indicator-fr {
+    background-color: #a855f7;
+}
+
+/* Language Section Dividers */
+.lang-divider-en {
+    height: 2px;
+    background: linear-gradient(to right, transparent, #3b82f6, transparent);
+    margin: 1rem 0;
+}
+
+.lang-divider-fr {
+    height: 2px;
+    background: linear-gradient(to right, transparent, #a855f7, transparent);
+    margin: 1rem 0;
+}
+
+/* Language Info Boxes */
+.lang-info-en {
+    background-color: #dbeafe; /* blue-100 */
+    border-left: 4px solid #3b82f6;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+.lang-info-fr {
+    background-color: #f3e8ff; /* purple-100 */
+    border-left: 4px solid #a855f7;
+    padding: 1rem;
+    border-radius: 0.375rem;
 }
 
 /* ===== STATUS BADGES ===== */
@@ -403,21 +989,143 @@
     color: #374151;
 }
 
-/* ===== UTILITIES ===== */
-.line-clamp-3 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
+.status-call-received {
+    background-color: #dbeafe;
+    color: #1e40af;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-    .stat-card {
-        flex-direction: column;
-    }
-
-    .chart-card {
-        font-size: 0.875rem;
-    }
+.status-interview-scheduled {
+    background-color: #e0e7ff;
+    color: #4338ca;
 }
+
+.status-interview-complete {
+    background-color: #ddd6fe;
+    color: #6b21a8;
+}
+
+.status-offer {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-hired {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-frozen {
+    background-color: #e0f2fe;
+    color: #075985;
+}
+
+/* Utility Classes */
+.text-en {
+    color: #1d4ed8; /* blue-700 */
+}
+
+.text-fr {
+    color: #7e22ce; /* purple-700 */
+}
+
+.bg-en-light {
+    background-color: #eff6ff; /* blue-50 */
+}
+
+.bg-fr-light {
+    background-color: #faf5ff; /* purple-50 */
+}
+
+.border-en {
+    border-color: #3b82f6;
+}
+
+.border-fr {
+    border-color: #a855f7;
+}
+</style>
+
+<!-- Helper JavaScript Function -->
+<script>
+// Language Badge Generator
+function createLangBadge(language) {
+    const badges = {
+        'en': '<span class="lang-badge lang-badge-en lang-icon-en">EN</span>',
+        'fr': '<span class="lang-badge lang-badge-fr lang-icon-fr">FR</span>',
+        'both': '<span class="lang-badge lang-badge-both">EN+FR</span>'
+    };
+    return badges[language] || badges['en'];
+}
+
+// Language Class Helper
+function getLangClass(language, type = 'badge') {
+    const classes = {
+        badge: {
+            'en': 'lang-badge lang-badge-en lang-icon-en',
+            'fr': 'lang-badge lang-badge-fr lang-icon-fr',
+            'both': 'lang-badge lang-badge-both'
+        },
+        card: {
+            'en': 'lang-card-en',
+            'fr': 'lang-card-fr'
+        },
+        button: {
+            'en': 'lang-btn-en',
+            'fr': 'lang-btn-fr'
+        },
+        row: {
+            'en': 'lang-row-en',
+            'fr': 'lang-row-fr'
+        }
+    };
+
+    return classes[type][language] || classes[type]['en'];
+}
+</script>
+
+<!-- Usage Examples -->
+
+<!-- Example 1: Language Badge -->
+<span class="lang-badge lang-badge-en lang-icon-en">English</span>
+<span class="lang-badge lang-badge-fr lang-icon-fr">French</span>
+<span class="lang-badge lang-badge-both">Both</span>
+
+<!-- Example 2: Language Card -->
+<div class="lang-card-en p-4">
+    <p class="text-en font-semibold">English Content</p>
+</div>
+
+<div class="lang-card-fr p-4">
+    <p class="text-fr font-semibold">French Content</p>
+</div>
+
+<!-- Example 3: Language Toggle Buttons -->
+<div class="lang-toggle">
+    <button class="lang-toggle-btn active-en">English</button>
+    <button class="lang-toggle-btn">French</button>
+    <button class="lang-toggle-btn">Both</button>
+</div>
+
+<!-- Example 4: Table Row with Language Indicator -->
+<tr class="lang-row-en hover:bg-blue-50">
+    <td>
+        <span class="lang-indicator lang-indicator-en"></span>
+        Application Data
+    </td>
+</tr>
+
+<!-- Example 5: Language Header -->
+<div class="lang-header-en">
+    <i class="fas fa-flag-usa mr-2"></i>
+    English Applications
+</div>
+
+<!-- Example 6: Info Box -->
+<div class="lang-info-en">
+    <p><strong>Tip:</strong> This is for English applications</p>
+</div>

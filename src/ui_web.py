@@ -13,8 +13,9 @@ import random
 import csv
 import io
 
-# Insert project root to import settings_manager
+# Project config and settings manager
 from src.config import PROJECT_ROOT, ATTACHMENT_FOLDER_EN, ATTACHMENT_FOLDER_FR
+# Insert project root to import settings_manager
 sys.path.insert(0, str(PROJECT_ROOT))
 from settings_manager import settings_manager
 
@@ -85,8 +86,12 @@ def calculate_real_response_rate(all_apps):
         return 0
 
     # Count applications with positive responses
+    positive_statuses = [
+        'Interview', 'Call Received', 'Hired', 'Offer',
+        'Interview Scheduled', 'Interview Complete'
+    ]
     responded = sum(1 for app in all_apps
-                   if app.get('status') in ['Interview', 'Call Received', 'Hired', 'Offer', 'Interview Scheduled', 'Interview Complete'])
+                   if app.get('status') in positive_statuses)
     return (responded / len(all_apps) * 100) if len(all_apps) > 0 else 0
 
 
@@ -189,8 +194,8 @@ async def send_page(request: Request, template: Optional[str] = None):
     template_language = default_language
 
     if template:
-        template_manager = get_template_manager()
         try:
+            template_manager = get_template_manager()
             category, template_id = template.split(':', 1)
             template_data = template_manager.get_template(category, template_id)
             if template_data:

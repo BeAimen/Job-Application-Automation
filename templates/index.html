@@ -117,7 +117,7 @@
                     <div class="flex items-center space-x-4">
                         <div class="w-32 bg-gray-200 rounded-full h-2">
                             {% set max_count = top_companies[0].count if top_companies else 1 %}
-                            <div class="bg-blue-500 h-2 rounded-full" style="width: {{ (company.count / max_count * 100)|int }}%"></div>
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" style="width: {{ (company.count / max_count * 100)|int }}%"></div>
                         </div>
                     </div>
                 </div>
@@ -181,6 +181,7 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
+                    <th class="table-header">Language</th>
                     <th class="table-header">Company</th>
                     <th class="table-header">Email</th>
                     <th class="table-header">Position</th>
@@ -194,6 +195,13 @@
                 {% for app in recent_applications %}
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="table-cell">
+                        {% if app.get('language') == 'en' or 'Applications_EN' in app.get('sheet', '') %}
+                        <span class="lang-badge lang-badge-en lang-icon-en">EN</span>
+                        {% else %}
+                        <span class="lang-badge lang-badge-fr lang-icon-fr">FR</span>
+                        {% endif %}
+                    </td>
+                    <td class="table-cell">
                         <div class="editable" data-field="company" data-id="{{ app.id }}">
                             {{ app.company }}
                         </div>
@@ -205,7 +213,8 @@
                     </td>
                     <td class="table-cell">{{ app.position }}</td>
                     <td class="table-cell">
-                        <span class="status-badge status-{{ app.status.lower().replace(' ', '-') }}">
+                        {% set status_lower = app.status.lower().replace(' ', '-') %}
+                        <span class="status-badge status-{{ status_lower }}">
                             {{ app.status }}
                         </span>
                     </td>
@@ -221,7 +230,7 @@
                 {% endfor %}
                 {% else %}
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center">
+                    <td colspan="7" class="px-6 py-12 text-center">
                         <div class="text-gray-400">
                             <i class="fas fa-inbox text-5xl mb-4"></i>
                             <p class="text-lg">No applications yet</p>
@@ -240,11 +249,16 @@
 
 {% block scripts %}
 <script>
-// Timeline Chart with REAL DATA
+// Timeline Chart with gradient
 const timelineCtx = document.getElementById('timelineChart');
 if (timelineCtx) {
     const labels = {{ timeline.labels | tojson }};
     const data = {{ timeline.data | tojson }};
+
+    const gradient = timelineCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+    gradient.addColorStop(0.5, 'rgba(168, 85, 247, 0.3)');
+    gradient.addColorStop(1, 'rgba(168, 85, 247, 0.1)');
 
     new Chart(timelineCtx, {
         type: 'line',
@@ -254,9 +268,10 @@ if (timelineCtx) {
                 label: 'Applications Sent',
                 data: data,
                 borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                backgroundColor: gradient,
                 tension: 0.4,
-                fill: true
+                fill: true,
+                borderWidth: 3
             }]
         },
         options: {
@@ -277,7 +292,7 @@ if (timelineCtx) {
     });
 }
 
-// Language Chart with REAL DATA
+// Language Chart (Doughnut)
 const languageCtx = document.getElementById('languageChart');
 if (languageCtx) {
     const langData = {{ lang_dist | tojson }};
@@ -285,10 +300,15 @@ if (languageCtx) {
     new Chart(languageCtx, {
         type: 'doughnut',
         data: {
-            labels: ['English', 'French'],
+            labels: ['🇺🇸 English', '🇫🇷 French'],
             datasets: [{
                 data: [langData.en, langData.fr],
-                backgroundColor: ['rgb(59, 130, 246)', 'rgb(168, 85, 247)']
+                backgroundColor: [
+                    'rgb(59, 130, 246)',   // Blue for English
+                    'rgb(168, 85, 247)'     // Purple for French
+                ],
+                borderWidth: 3,
+                borderColor: '#fff'
             }]
         },
         options: {
@@ -296,7 +316,14 @@ if (languageCtx) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
                 }
             }
         }

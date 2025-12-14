@@ -1,236 +1,355 @@
 {% extends "base.html" %}
-{% block title %}Application Status - JobFlow{% endblock %}
+{% block title %}Application Details - JobFlow{% endblock %}
 
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
-    <div class="flex items-center mb-8">
-        <a href="/applications?lang={{ language }}" class="text-blue-600 hover:text-blue-800 mr-4">
-            <i class="fas fa-arrow-left mr-1"></i> Back to Applications
+    <!-- Breadcrumb -->
+    <div class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+        <a href="/" class="hover:text-blue-600">
+            <i class="fas fa-home"></i>
         </a>
-        <h1 class="text-3xl font-bold text-gray-900">Application Details</h1>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <a href="/applications?lang={{ language }}" class="hover:text-blue-600">Applications</a>
+        <i class="fas fa-chevron-right text-xs"></i>
+        <span class="text-gray-900 font-medium">{{ application.company }}</span>
     </div>
 
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-        <!-- Header with Actions -->
-        <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600">
-            <div class="flex items-center justify-between">
-                <div class="text-white flex-1">
-                    <h2 class="text-2xl font-bold editable-field"
+    <!-- Header Card -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+        <!-- Header with Gradient -->
+        <div class="{% if language == 'en' %}bg-gradient-to-r from-blue-500 to-blue-600{% else %}bg-gradient-to-r from-purple-500 to-purple-600{% endif %} px-6 py-6">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <span class="lang-badge {% if language == 'en' %}bg-blue-700 text-white border-blue-800{% else %}bg-purple-700 text-white border-purple-800{% endif %}">
+                            {% if language == 'en' %}🇺🇸 EN{% else %}🇫🇷 FR{% endif %}
+                        </span>
+                        <span class="text-blue-100 text-sm">ID: {{ application.id[:8] }}...</span>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white mb-2 editable-field-white cursor-pointer hover:bg-white hover:bg-opacity-10 px-2 py-1 rounded transition-colors"
                         data-field="company"
                         data-id="{{ application.id }}"
                         data-lang="{{ language }}"
                         onclick="makeEditable(this)">
                         {{ application.company }}
-                    </h2>
-                    <p class="text-blue-100 mt-1">{{ application.position }}</p>
+                    </h1>
+                    <p class="text-blue-100 text-lg">{{ application.position }}</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <select id="statusSelect"
-                            class="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium"
-                            onchange="updateStatus('{{ application.id }}', '{{ language }}', this.value)">
-                        {% for status in status_options %}
-                        <option value="{{ status }}" {% if application.status == status %}selected{% endif %}>
-                            {{ status }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <button onclick="confirmDelete('{{ application.id }}', '{{ language }}')"
-                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <!-- Current Status Badge -->
+                    <div class="bg-white bg-opacity-20 px-4 py-2 rounded-lg backdrop-blur-sm">
+                        <p class="text-xs text-blue-100 mb-1">Current Status</p>
+                        <p class="text-white font-bold text-lg">{{ application.status }}</p>
+                    </div>
+
+                    <!-- Actions Menu -->
+                    <div class="relative">
+                        <button onclick="toggleActionsMenu()"
+                                id="actionsMenuButton"
+                                class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all backdrop-blur-sm">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="actionsMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                            <a href="#" onclick="event.preventDefault(); editApplication('{{ application.id }}', '{{ language }}')"
+                               class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                                <i class="fas fa-edit text-blue-500 mr-2 w-4"></i> Edit Details
+                            </a>
+                            <a href="#" onclick="event.preventDefault(); duplicateApplication('{{ application.id }}', '{{ language }}')"
+                               class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                                <i class="fas fa-copy text-green-500 mr-2 w-4"></i> Duplicate
+                            </a>
+                            <a href="#" onclick="event.preventDefault(); exportApplication('{{ application.id }}', '{{ language }}')"
+                               class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                                <i class="fas fa-download text-purple-500 mr-2 w-4"></i> Export
+                            </a>
+                            <div class="border-t-2 border-red-100"></div>
+                            <a href="#" onclick="event.preventDefault(); confirmDelete('{{ application.id }}', '{{ language }}')"
+                               class="block px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-medium">
+                                <i class="fas fa-trash mr-2 w-4"></i> Delete Application
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <!-- Quick Actions Bar -->
+        <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Status Updates</p>
             <div class="flex flex-wrap gap-2">
                 <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Call Received')"
-                        class="btn-sm bg-blue-100 text-blue-700 hover:bg-blue-200">
+                        class="quick-action-btn bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
                     <i class="fas fa-phone mr-1"></i> Got a Call
                 </button>
                 <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Interview Scheduled')"
-                        class="btn-sm bg-green-100 text-green-700 hover:bg-green-200">
+                        class="quick-action-btn bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
                     <i class="fas fa-calendar-check mr-1"></i> Interview Scheduled
                 </button>
                 <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Interview Complete')"
-                        class="btn-sm bg-purple-100 text-purple-700 hover:bg-purple-200">
+                        class="quick-action-btn bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100">
                     <i class="fas fa-user-check mr-1"></i> Interview Done
                 </button>
                 <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Offer')"
-                        class="btn-sm bg-yellow-100 text-yellow-700 hover:bg-yellow-200">
+                        class="quick-action-btn bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100">
                     <i class="fas fa-envelope-open-text mr-1"></i> Received Offer
                 </button>
                 <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Hired')"
-                        class="btn-sm bg-green-100 text-green-700 hover:bg-green-200">
+                        class="quick-action-btn bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
                     <i class="fas fa-briefcase mr-1"></i> Hired!
                 </button>
                 <button onclick="quickStatusUpdate('{{ application.id }}', '{{ language }}', 'Rejected')"
-                        class="btn-sm bg-red-100 text-red-700 hover:bg-red-200">
+                        class="quick-action-btn bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
                     <i class="fas fa-times-circle mr-1"></i> Rejected
                 </button>
             </div>
         </div>
+    </div>
 
-        <!-- Details Grid -->
-        <div class="px-6 py-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Contact Information -->
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column - Contact & Details -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Contact Information -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r {% if language == 'en' %}from-blue-50 to-blue-100{% else %}from-purple-50 to-purple-100{% endif %} border-b border-gray-200">
+                    <h3 class="text-lg font-semibold {% if language == 'en' %}text-blue-900{% else %}text-purple-900{% endif %} flex items-center">
                         <i class="fas fa-address-card mr-2"></i> Contact Information
                     </h3>
-
-                    <div class="detail-row">
-                        <div class="detail-label">Email</div>
-                        <div class="detail-value editable-field"
-                             data-field="email"
-                             data-id="{{ application.id }}"
-                             data-lang="{{ language }}"
-                             onclick="makeEditable(this)">
-                            {{ application.email }}
-                        </div>
-                    </div>
-
-                    {% if application.phone %}
-                    <div class="detail-row">
-                        <div class="detail-label">Phone</div>
-                        <div class="detail-value">
-                            <a href="tel:{{ application.phone }}" class="text-blue-600 hover:text-blue-800">
-                                {{ application.phone }}
-                            </a>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if application.website %}
-                    <div class="detail-row">
-                        <div class="detail-label">Website</div>
-                        <div class="detail-value">
-                            <a href="{{ application.website }}" target="_blank" class="text-blue-600 hover:text-blue-800">
-                                {{ application.website }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
-                            </a>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
-
-                <!-- Application Details -->
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
-                        <i class="fas fa-info-circle mr-2"></i> Application Details
-                    </h3>
-
-                    <div class="detail-row">
-                        <div class="detail-label">Application ID</div>
-                        <div class="detail-value font-mono text-sm">{{ application.id }}</div>
-                    </div>
-
-                    <div class="detail-row">
-                        <div class="detail-label">Sent Date</div>
-                        <div class="detail-value">
-                            {% if application.sent_date %}
-                            {{ application.sent_date[:19] }}
-                            {% else %}
-                            <span class="text-gray-400">Not sent yet</span>
-                            {% endif %}
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex items-start justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div class="flex items-start space-x-3">
+                                <div class="{% if language == 'en' %}bg-blue-100{% else %}bg-purple-100{% endif %} p-2 rounded-lg">
+                                    <i class="fas fa-envelope {% if language == 'en' %}text-blue-600{% else %}text-purple-600{% endif %}"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide">Email Address</p>
+                                    <p class="text-sm font-medium text-gray-900 editable-field mt-1 cursor-pointer hover:bg-gray-200 px-2 py-1 rounded"
+                                       data-field="email"
+                                       data-id="{{ application.id }}"
+                                       data-lang="{{ language }}"
+                                       onclick="makeEditable(this)">
+                                        {{ application.email }}
+                                    </p>
+                                </div>
+                            </div>
+                            <a href="mailto:{{ application.email }}" class="text-blue-600 hover:text-blue-700">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
                         </div>
-                    </div>
 
-                    <div class="detail-row">
-                        <div class="detail-label">Follow-ups Sent</div>
-                        <div class="detail-value">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                {{ application.followups }}
-                            </span>
+                        {% if application.phone %}
+                        <div class="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-start space-x-3">
+                                <div class="{% if language == 'en' %}bg-blue-100{% else %}bg-purple-100{% endif %} p-2 rounded-lg">
+                                    <i class="fas fa-phone {% if language == 'en' %}text-blue-600{% else %}text-purple-600{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide">Phone Number</p>
+                                    <p class="text-sm font-medium text-gray-900 mt-1">{{ application.phone }}</p>
+                                </div>
+                            </div>
+                            <a href="tel:{{ application.phone }}" class="text-blue-600 hover:text-blue-700">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
                         </div>
-                    </div>
+                        {% endif %}
 
-                    <div class="detail-row">
-                        <div class="detail-label">Next Follow-up</div>
-                        <div class="detail-value">
-                            {% if application.next_followup_date %}
-                            {{ application.next_followup_date[:19] }}
-                            {% else %}
-                            <span class="text-gray-400">N/A</span>
-                            {% endif %}
+                        {% if application.website %}
+                        <div class="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-start space-x-3">
+                                <div class="{% if language == 'en' %}bg-blue-100{% else %}bg-purple-100{% endif %} p-2 rounded-lg">
+                                    <i class="fas fa-globe {% if language == 'en' %}text-blue-600{% else %}text-purple-600{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide">Website</p>
+                                    <p class="text-sm font-medium text-gray-900 mt-1">{{ application.website }}</p>
+                                </div>
+                            </div>
+                            <a href="{{ application.website }}" target="_blank" class="text-blue-600 hover:text-blue-700">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
                         </div>
-                    </div>
-
-                    <div class="detail-row">
-                        <div class="detail-label">CV Attachment</div>
-                        <div class="detail-value">
-                            {% if application.cv %}
-                            <i class="fas fa-file-pdf text-red-500 mr-1"></i> {{ application.cv }}
-                            {% else %}
-                            <span class="text-gray-400">None</span>
-                            {% endif %}
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <!-- Email Body -->
             {% if application.body %}
-            <div class="mt-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 border-b pb-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r {% if language == 'en' %}from-blue-50 to-blue-100{% else %}from-purple-50 to-purple-100{% endif %} border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold {% if language == 'en' %}text-blue-900{% else %}text-purple-900{% endif %} flex items-center">
                         <i class="fas fa-envelope mr-2"></i> Email Body
                     </h3>
-                    <button onclick="editEmailBody('{{ application.id }}', '{{ language }}')" class="text-sm text-blue-600 hover:text-blue-700">
+                    <button onclick="editEmailBody('{{ application.id }}', '{{ language }}')"
+                            class="text-sm {% if language == 'en' %}text-blue-700 hover:text-blue-800{% else %}text-purple-700 hover:text-purple-800{% endif %} font-medium">
                         <i class="fas fa-edit mr-1"></i> Edit
                     </button>
                 </div>
-                <div id="emailBody" class="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200">{{ application.body }}</div>
+                <div class="p-6">
+                    <div id="emailBody" class="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200 font-mono">{{ application.body }}</div>
+                </div>
             </div>
             {% endif %}
 
             <!-- Notes -->
             {% if application.notes %}
-            <div class="mt-8">
-                <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">
-                    <i class="fas fa-sticky-note mr-2"></i> Notes
-                </h3>
-                <div class="bg-yellow-50 rounded-lg p-4 text-sm text-gray-700 border border-yellow-200">{{ application.notes }}</div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-yellow-900 flex items-center">
+                        <i class="fas fa-sticky-note mr-2"></i> Notes
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="bg-yellow-50 rounded-lg p-4 text-sm text-gray-700 border border-yellow-200">{{ application.notes }}</div>
+                </div>
             </div>
             {% endif %}
+        </div>
+
+        <!-- Right Column - Application Details -->
+        <div class="space-y-6">
+            <!-- Timeline Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r {% if language == 'en' %}from-blue-50 to-blue-100{% else %}from-purple-50 to-purple-100{% endif %} border-b border-gray-200">
+                    <h3 class="text-lg font-semibold {% if language == 'en' %}text-blue-900{% else %}text-purple-900{% endif %} flex items-center">
+                        <i class="fas fa-clock mr-2"></i> Timeline
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="{% if language == 'en' %}bg-blue-100{% else %}bg-purple-100{% endif %} p-2 rounded-lg">
+                            <i class="fas fa-paper-plane {% if language == 'en' %}text-blue-600{% else %}text-purple-600{% endif %}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Sent Date</p>
+                            <p class="text-sm font-medium text-gray-900 mt-1">
+                                {% if application.sent_date %}
+                                {{ application.sent_date[:10] }} at {{ application.sent_date[11:16] }}
+                                {% else %}
+                                <span class="text-gray-400">Not sent yet</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="{% if language == 'en' %}bg-blue-100{% else %}bg-purple-100{% endif %} p-2 rounded-lg">
+                            <i class="fas fa-redo {% if language == 'en' %}text-blue-600{% else %}text-purple-600{% endif %}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Follow-ups Sent</p>
+                            <p class="text-2xl font-bold {% if language == 'en' %}text-blue-600{% else %}text-purple-600{% endif %} mt-1">
+                                {{ application.followups }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-yellow-100 p-2 rounded-lg">
+                            <i class="fas fa-calendar-alt text-yellow-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Next Follow-up</p>
+                            <p class="text-sm font-medium text-gray-900 mt-1">
+                                {% if application.next_followup_date %}
+                                {{ application.next_followup_date[:10] }}
+                                {% else %}
+                                <span class="text-gray-400">N/A</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attachment Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r from-red-50 to-red-100 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-red-900 flex items-center">
+                        <i class="fas fa-paperclip mr-2"></i> Attachment
+                    </h3>
+                </div>
+                <div class="p-6">
+                    {% if application.cv %}
+                    <div class="flex items-center space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                        <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">{{ application.cv }}</p>
+                            <p class="text-xs text-gray-500 mt-1">PDF Document</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-file-slash text-4xl mb-2"></i>
+                        <p class="text-sm">No attachment</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Application ID Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-fingerprint mr-2"></i> Application ID
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <p class="text-xs font-mono text-gray-500 break-all">{{ application.id }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f3f4f6;
-}
-
-.detail-label {
+.quick-action-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    color: #6b7280;
-    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
 }
 
-.detail-value {
-    color: #111827;
-    font-size: 0.875rem;
-    text-align: right;
+.editable-field-white {
+    display: inline-block;
+    min-width: 50px;
 }
 
 .editable-field {
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.15s;
-}
-
-.editable-field:hover {
-    background-color: rgba(59, 130, 246, 0.1);
+    display: inline-block;
+    min-width: 50px;
 }
 </style>
 
 <script>
+// Toggle actions menu
+function toggleActionsMenu() {
+    const menu = document.getElementById('actionsMenu');
+    menu.classList.toggle('hidden');
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('actionsMenu');
+    const button = document.getElementById('actionsMenuButton');
+
+    if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
 function makeEditable(element) {
     const originalValue = element.textContent.trim();
     const field = element.dataset.field;
@@ -316,8 +435,46 @@ async function updateStatus(appId, language, status) {
 }
 
 async function quickStatusUpdate(appId, language, status) {
-    document.getElementById('statusSelect').value = status;
-    await updateStatus(appId, language, status);
+    // Update status via API
+    const formData = new FormData();
+    formData.append('field', 'status');
+    formData.append('value', status);
+    formData.append('language', language);
+
+    try {
+        const response = await fetch(`/api/applications/${appId}`, {
+            method: 'PUT',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Update the status badge in header
+            const statusBadge = document.querySelector('.bg-white.bg-opacity-20 p');
+            if (statusBadge) {
+                statusBadge.textContent = status;
+            }
+
+            showToast('Status updated to: ' + status, 'success');
+        } else {
+            showToast('Failed to update status', 'error');
+        }
+    } catch (error) {
+        showToast('Network error', 'error');
+    }
+}
+
+function editApplication(appId, language) {
+    showToast('Edit functionality coming soon', 'info');
+}
+
+function duplicateApplication(appId, language) {
+    showToast('Duplicate functionality coming soon', 'info');
+}
+
+function exportApplication(appId, language) {
+    showToast('Export functionality coming soon', 'info');
 }
 
 function editEmailBody(appId, language) {
@@ -327,7 +484,7 @@ function editEmailBody(appId, language) {
     const textarea = document.createElement('textarea');
     textarea.value = originalBody;
     textarea.rows = 12;
-    textarea.className = 'form-input w-full';
+    textarea.className = 'form-input w-full font-mono text-sm';
 
     bodyDiv.replaceWith(textarea);
     textarea.focus();
@@ -354,7 +511,7 @@ function editEmailBody(appId, language) {
             if (data.success) {
                 const newDiv = document.createElement('div');
                 newDiv.id = 'emailBody';
-                newDiv.className = 'bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200';
+                newDiv.className = 'bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200 font-mono';
                 newDiv.textContent = newBody;
 
                 textarea.replaceWith(newDiv);
@@ -376,7 +533,7 @@ function editEmailBody(appId, language) {
     cancelButton.onclick = () => {
         const newDiv = document.createElement('div');
         newDiv.id = 'emailBody';
-        newDiv.className = 'bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200';
+        newDiv.className = 'bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-700 border border-gray-200 font-mono';
         newDiv.textContent = originalBody;
 
         textarea.replaceWith(newDiv);
