@@ -49,6 +49,7 @@ SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '')
 SHEET_EN = os.getenv('SHEET_EN', 'Applications_EN')
 SHEET_FR = os.getenv('SHEET_FR', 'Applications_FR')
 SHEET_ACTIVITY = os.getenv('SHEET_ACTIVITY', 'Activity_Log')
+SHEET_COMPANIES = os.getenv('SHEET_COMPANIES', 'Companies')
 
 # ---------------------------------------------------------
 # EMAIL CONFIGURATION
@@ -97,7 +98,7 @@ During my internship at Sonatrach GL1K, I redesigned an industrial air dryer con
 
 I also have practical experience with HART-based calibration, loop checks, commissioning activities, and interpreting ISA-compliant P&IDs and control diagrams. My trilingual proficiency in Arabic, English, and French allows me to collaborate effectively across multicultural technical teams.
 
-I am available immediately and highly motivated to contribute to [Company]’s standards of technical excellence, reliability, and safe field performance.
+I am available immediately and highly motivated to contribute to [Company]'s standards of technical excellence, reliability, and safe field performance.
 
 Thank you for your time and consideration.
 
@@ -115,13 +116,13 @@ Aimen Berkane
 
 Je souhaite vous soumettre ma candidature au poste de [Position] au sein de [Company]. Mon expérience pratique en systèmes PLC, SCADA/HMI et instrumentation industrielle correspond étroitement à vos exigences opérationnelles et de sécurité.
 
-Lors de mon stage chez Sonatrach GL1K, j’ai repensé le système de contrôle d’un sécheur d’air industriel en utilisant Siemens TIA Portal et WinCC. Cette amélioration a permis d’éliminer les instabilités de pression et les défauts de synchronisation, aboutissant à une amélioration de 20 % de la qualité de l’air et à une réduction de 15 % des temps d’arrêt. Ce travail a été validé comme projet de fin d’études.
+Lors de mon stage chez Sonatrach GL1K, j'ai repensé le système de contrôle d'un sécheur d'air industriel en utilisant Siemens TIA Portal et WinCC. Cette amélioration a permis d'éliminer les instabilités de pression et les défauts de synchronisation, aboutissant à une amélioration de 20 % de la qualité de l'air et à une réduction de 15 % des temps d'arrêt. Ce travail a été validé comme projet de fin d'études.
 
-Je possède également une solide expérience en calibration HART, en loop checks, en mise en service ainsi qu’en lecture et interprétation de schémas P&ID conformes aux normes ISA. Ma maîtrise de l’arabe, de l’anglais et du français me permet de travailler efficacement dans des environnements techniques multiculturels.
+Je possède également une solide expérience en calibration HART, en loop checks, en mise en service ainsi qu'en lecture et interprétation de schémas P&ID conformes aux normes ISA. Ma maîtrise de l'arabe, de l'anglais et du français me permet de travailler efficacement dans des environnements techniques multiculturels.
 
-Disponible immédiatement, je suis fortement motivé à contribuer aux standards d’excellence technique, de fiabilité et de sécurité de [Company].
+Disponible immédiatement, je suis fortement motivé à contribuer aux standards d'excellence technique, de fiabilité et de sécurité de [Company].
 
-Je vous remercie par avance pour l’attention portée à ma candidature.
+Je vous remercie par avance pour l'attention portée à ma candidature.
 
 Cordialement,  
 Aimen Berkane

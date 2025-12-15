@@ -261,7 +261,11 @@ async def send_application(
         body_fr: Optional[str] = Form(None),
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
-        notes: Optional[str] = Form(None)
+        notes: Optional[str] = Form(None),
+company_type: Optional[str] = Form(None),
+    salary: Optional[str] = Form(None),
+    place: Optional[str] = Form(None),
+    reference_link: Optional[str] = Form(None)
 ):
     sheets_client, mailer, attachment_selector = get_clients()
 
@@ -340,7 +344,11 @@ async def send_application(
                     phone=phone,
                     website=website,
                     notes=notes,
-                    status='Pending'
+                    status='Pending',
+                    company_type=company_type,
+                    salary=salary,
+                    place=place,
+                    reference_link=reference_link
                 )
 
                 final_body = substitute_placeholders(
@@ -900,6 +908,206 @@ async def upload_attachment(
         'message': f'Uploaded to {language} folder'
     })
 
+
+@app.get("/companies", response_class=HTMLResponse)
+async def companies_page(request: Request):
+    """Companies management page."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        companies = sheets_client.get_all_companies()
+
+        # Calculate recent count (this month)
+        timezone = settings_manager.get_setting('timezone', 'UTC')
+        tz = pytz.timezone(timezone)
+        now = datetime.now(tz)
+        first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        recent_count = sum(
+            1 for company in companies
+            if company.get('added_date') and
+            datetime.fromisoformat(company['added_date']) >= first_day_of_month
+        )
+
+    except Exception as e:
+        print(f"Companies page error: {e}")
+        companies = []
+        recent_count = 0
+
+    return templates.TemplateResponse(
+        "companies.html",
+        {
+            "request": request,
+            "companies": companies,
+            "recent_count": recent_count
+        }
+    )
+
+
+@app.post("/api/companies")
+async def create_company(
+        name: str = Form(...),
+        type: Optional[str] = Form(None),
+        email: Optional[str] = Form(None),
+        phone: Optional[str] = Form(None),
+        website: Optional[str] = Form(None),
+        location: Optional[str] = Form(None),
+        notes: Optional[str] = Form(None)
+):
+    """Create a new company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        company_id = sheets_client.add_company(
+            company_name=name,
+            company_type=type,
+            email=email,
+            phone=phone,
+            website=website,
+            location=location,
+            notes=notes
+        )
+
+        return JSONResponse(content={
+            'success': True,
+            'company_id': company_id,
+            'message': 'Company added successfully'
+        })
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.get("/api/companies/{company_id}")
+async def get_company(company_id: str):
+    """Get a specific company by ID."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        company = sheets_client.get_company_by_id(company_id)
+
+        if company:
+            return JSONResponse(content={
+                'success': True,
+                'company': company
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Company not found'},
+                status_code=404
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.put("/api/companies/{company_id}")
+async def update_company(
+        company_id: str,
+        name: str = Form(...),
+        type: Optional[str] = Form(None),
+        email: Optional[str] = Form(None),
+        phone: Optional[str] = Form(None),
+        website: Optional[str] = Form(None),
+        location: Optional[str] = Form(None),
+        notes: Optional[str] = Form(None)
+):
+    """Update an existing company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        success = sheets_client.update_company(
+            company_id=company_id,
+            company_name=name,
+            company_type=type,
+            email=email,
+            phone=phone,
+            website=website,
+            location=location,
+            notes=notes
+        )
+
+        if success:
+            return JSONResponse(content={
+                'success': True,
+                'message': 'Company updated successfully'
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Company not found'},
+                status_code=404
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.delete("/api/companies/{company_id}")
+async def delete_company(company_id: str):
+    """Delete a company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        success = sheets_client.delete_company(company_id)
+
+        if success:
+            return JSONResponse(content={
+                'success': True,
+                'message': 'Company deleted successfully'
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Company not found'},
+                status_code=404
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.get("/companies/{company_id}", response_class=HTMLResponse)
+async def company_detail_page(request: Request, company_id: str):
+    """View detailed information about a specific company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        company = sheets_client.get_company_by_id(company_id)
+
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+
+        # Get applications for this company (both EN and FR)
+        apps_en = sheets_client.get_applications_for_followup('en')
+        apps_fr = sheets_client.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
+
+        # Filter applications for this company
+        company_apps = [
+            app for app in all_apps
+            if app.get('company', '').lower() == company['name'].lower()
+        ]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse(
+        "company_detail.html",
+        {
+            "request": request,
+            "company": company,
+            "applications": company_apps
+        }
+    )
 
 @app.get("/health")
 async def health_check():

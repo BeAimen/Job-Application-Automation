@@ -245,28 +245,102 @@
             </div>
 
             <!-- Additional Fields (Collapsible) -->
-            <div class="border-t pt-4">
-                <button type="button" onclick="toggleAdditional()" class="text-sm font-medium text-gray-700 hover:text-gray-900">
-                    <i class="fas fa-plus-circle mr-1"></i> Additional Information (Optional)
-                </button>
+<div class="border-t pt-4">
+    <button
+        type="button"
+        onclick="toggleAdditional()"
+        class="text-sm font-medium text-gray-700 hover:text-gray-900"
+    >
+        <i class="fas fa-plus-circle mr-1"></i> Additional Information (Optional)
+    </button>
 
-                <div id="additionalFields" class="hidden mt-4 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                        <input type="tel" name="phone" placeholder="+1-234-567-8900" class="form-input" />
-                    </div>
+    <div id="additionalFields" class="hidden mt-4 space-y-6">
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Website</label>
-                        <input type="url" name="website" placeholder="https://company.com" class="form-input" />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                        <textarea name="notes" rows="3" placeholder="Internal notes..." class="form-input"></textarea>
-                    </div>
-                </div>
+        <!-- Row 1: Company Type + Website -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
+    <select name="company_type" class="form-input" required>
+        <option value="Oil & Gas" selected>Oil & Gas</option>
+        <option value="Petrochemical">Petrochemical</option>
+        <option value="Power & Energy">Power & Energy</option>
+        <option value="Manufacturing / Industrial Plants">Manufacturing / Industrial Plants</option>
+        <option value="Food Processing / Food Industry">Food Processing / Food Industry</option>
+        <option value="Consumer Goods">Consumer Goods</option>
+    </select>
             </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input
+                    type="url"
+                    name="website"
+                    placeholder="https://company.com"
+                    class="form-input"
+                />
+            </div>
+        </div>
+
+        <!-- Row 2: Phone Number + Location -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                    type="tel"
+                    name="phone"
+                    placeholder="+213 5xx xxx xxx"
+                    class="form-input"
+                />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Location / Place</label>
+                <input
+                    type="text"
+                    name="place"
+                    placeholder="City, Country or Industrial Site"
+                    class="form-input"
+                />
+            </div>
+        </div>
+
+        <!-- Row 3: Reference Link + Salary -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reference Link</label>
+                <input
+                    type="url"
+                    name="reference_link"
+                    placeholder="https://job-posting-link.com"
+                    class="form-input"
+                />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
+                <input
+                    type="text"
+                    name="salary"
+                    placeholder="e.g. 80,000 – 120,000 DZD / month"
+                    class="form-input"
+                />
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <textarea
+                name="notes"
+                rows="3"
+                placeholder="Interview notes, recruiter name, internal remarks..."
+                class="form-input"
+            ></textarea>
+        </div>
+
+    </div>
+</div>
+
 
             <!-- Submit Buttons -->
             <div class="flex justify-end space-x-3 pt-4">

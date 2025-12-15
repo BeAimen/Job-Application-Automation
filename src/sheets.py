@@ -1,18 +1,24 @@
 from typing import List, Dict, Optional, Any
 from googleapiclient.discovery import Resource
 
-from src.config import SPREADSHEET_ID, SHEET_EN, SHEET_FR, SHEET_ACTIVITY
+from src.config import SPREADSHEET_ID, SHEET_EN, SHEET_FR, SHEET_ACTIVITY, SHEET_COMPANIES
 from src.utils import (
     generate_id, get_current_timestamp, calculate_next_followup,
     get_default_company, get_default_position
 )
 
 
-# Column order (MUST match sheet structure)
+# Column order for Applications (UPDATED with new fields)
 APPLICATION_COLUMNS = [
     'ID', 'Company', 'Email', 'Position', 'Status', 'Sent Date',
     'Followups', 'Next Followup Date', 'Phone Number', 'Website',
-    'Body', 'CV', 'Notes'
+    'Body', 'CV', 'Notes', 'Type', 'Salary', 'Place', 'Reference Link'
+]
+
+# Column order for Companies sheet (NEW)
+COMPANY_COLUMNS = [
+    'ID', 'Company Name', 'Type', 'Email', 'Phone', 'Website',
+    'Location', 'Notes', 'Added Date', 'Last Updated'
 ]
 
 ACTIVITY_LOG_COLUMNS = [
@@ -39,6 +45,7 @@ class SheetsClient:
         self._ensure_headers(SHEET_EN, APPLICATION_COLUMNS)
         self._ensure_headers(SHEET_FR, APPLICATION_COLUMNS)
         self._ensure_headers(SHEET_ACTIVITY, ACTIVITY_LOG_COLUMNS)
+        self._ensure_headers(SHEET_COMPANIES, COMPANY_COLUMNS)  # NEW
 
     def _ensure_headers(self, sheet_name: str, headers: List[str]):
         """Ensure sheet contains the correct header row."""
@@ -63,7 +70,7 @@ class SheetsClient:
             print(f"[ERROR] Failed to ensure headers for {sheet_name}: {e}")
 
     # ---------------------------------------------------------
-    # APPLICATION CREATION
+    # APPLICATION CREATION (UPDATED with new fields)
     # ---------------------------------------------------------
     def add_application(
         self,
@@ -76,7 +83,11 @@ class SheetsClient:
         phone: Optional[str] = None,
         website: Optional[str] = None,
         notes: Optional[str] = None,
-        status: str = 'Pending'
+        status: str = 'Pending',
+        company_type: Optional[str] = None,  # NEW
+        salary: Optional[str] = None,  # NEW
+        place: Optional[str] = None,  # NEW
+        reference_link: Optional[str] = None  # NEW
     ) -> str:
         """Insert a new application row and return the application ID."""
 
@@ -99,12 +110,16 @@ class SheetsClient:
             website or "",
             body or "",
             cv_filename or "",
-            notes or ""
+            notes or "",
+            company_type or "",  # NEW
+            salary or "",  # NEW
+            place or "",  # NEW
+            reference_link or ""  # NEW
         ]
 
         self.service.spreadsheets().values().append(
             spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A:M",
+            range=f"{sheet_name}!A:Q",  # Updated range to include new columns
             valueInputOption="RAW",
             insertDataOption="INSERT_ROWS",
             body={"values": [row]}
@@ -113,7 +128,7 @@ class SheetsClient:
         return app_id
 
     # ---------------------------------------------------------
-    # UPDATE AFTER SEND
+    # UPDATE AFTER SEND (UPDATED)
     # ---------------------------------------------------------
     def update_application_sent(self, app_id: str, language: str, body: str, cv_filename: str):
         """Update sheet after email is successfully sent."""
@@ -183,7 +198,7 @@ class SheetsClient:
         ).execute()
 
     # ---------------------------------------------------------
-    # RETRIEVE FOLLOWUP-DUE APPLICATIONS
+    # RETRIEVE FOLLOWUP-DUE APPLICATIONS (UPDATED)
     # ---------------------------------------------------------
     def get_applications_for_followup(self, language: str) -> List[Dict[str, Any]]:
         """Return applications that require follow-up."""
@@ -191,7 +206,7 @@ class SheetsClient:
 
         result = self.service.spreadsheets().values().get(
             spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A2:M"
+            range=f"{sheet_name}!A2:Q"  # Updated range
         ).execute()
 
         rows = result.get("values", [])
@@ -225,6 +240,10 @@ class SheetsClient:
                 "body": row[10] if len(row) > 10 else "",
                 "cv": row[11] if len(row) > 11 else "",
                 "notes": row[12] if len(row) > 12 else "",
+                "type": row[13] if len(row) > 13 else "",  # NEW
+                "salary": row[14] if len(row) > 14 else "",  # NEW
+                "place": row[15] if len(row) > 15 else "",  # NEW
+                "reference_link": row[16] if len(row) > 16 else "",  # NEW
             })
 
         return applications
@@ -247,7 +266,7 @@ class SheetsClient:
         ).execute()
 
     # ---------------------------------------------------------
-    # LOOKUP HELPERS
+    # LOOKUP HELPERS (UPDATED)
     # ---------------------------------------------------------
     def get_application_by_id(self, app_id: str, language: str) -> Optional[Dict[str, Any]]:
         """Return full application details for a given ID."""
@@ -255,7 +274,7 @@ class SheetsClient:
 
         result = self.service.spreadsheets().values().get(
             spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A2:M"
+            range=f"{sheet_name}!A2:Q"  # Updated range
         ).execute()
 
         for row in result.get("values", []):
@@ -274,6 +293,10 @@ class SheetsClient:
                     "body": row[10] if len(row) > 10 else "",
                     "cv": row[11] if len(row) > 11 else "",
                     "notes": row[12] if len(row) > 12 else "",
+                    "type": row[13] if len(row) > 13 else "",  # NEW
+                    "salary": row[14] if len(row) > 14 else "",  # NEW
+                    "place": row[15] if len(row) > 15 else "",  # NEW
+                    "reference_link": row[16] if len(row) > 16 else "",  # NEW
                 }
 
         return None
@@ -302,3 +325,155 @@ class SheetsClient:
 
         values = result.get("values", [])
         return values[0][0] if values and values[0] else ""
+
+    # ==========================================================
+    # COMPANIES MANAGEMENT (NEW SECTION)
+    # ==========================================================
+
+    def add_company(
+        self,
+        company_name: str,
+        company_type: Optional[str] = None,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        website: Optional[str] = None,
+        location: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> str:
+        """Add a new company to the Companies sheet."""
+        company_id = generate_id()
+        added_date = get_current_timestamp()
+
+        row = [
+            company_id,
+            company_name,
+            company_type or "",
+            email or "",
+            phone or "",
+            website or "",
+            location or "",
+            notes or "",
+            added_date,
+            added_date  # Last Updated
+        ]
+
+        self.service.spreadsheets().values().append(
+            spreadsheetId=self.spreadsheet_id,
+            range=f"{SHEET_COMPANIES}!A:J",
+            valueInputOption="RAW",
+            insertDataOption="INSERT_ROWS",
+            body={"values": [row]}
+        ).execute()
+
+        return company_id
+
+    def get_all_companies(self) -> List[Dict[str, Any]]:
+        """Get all companies from the Companies sheet."""
+        try:
+            result = self.service.spreadsheets().values().get(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{SHEET_COMPANIES}!A2:J"
+            ).execute()
+
+            rows = result.get("values", [])
+            companies = []
+
+            for row in rows:
+                if not row:
+                    continue
+
+                companies.append({
+                    "id": row[0] if len(row) > 0 else "",
+                    "name": row[1] if len(row) > 1 else "",
+                    "type": row[2] if len(row) > 2 else "",
+                    "email": row[3] if len(row) > 3 else "",
+                    "phone": row[4] if len(row) > 4 else "",
+                    "website": row[5] if len(row) > 5 else "",
+                    "location": row[6] if len(row) > 6 else "",
+                    "notes": row[7] if len(row) > 7 else "",
+                    "added_date": row[8] if len(row) > 8 else "",
+                    "last_updated": row[9] if len(row) > 9 else ""
+                })
+
+            return companies
+        except Exception as e:
+            print(f"[ERROR] Failed to get companies: {e}")
+            return []
+
+    def get_company_by_id(self, company_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific company by ID."""
+        companies = self.get_all_companies()
+        for company in companies:
+            if company["id"] == company_id:
+                return company
+        return None
+
+    def update_company(
+        self,
+        company_id: str,
+        company_name: Optional[str] = None,
+        company_type: Optional[str] = None,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        website: Optional[str] = None,
+        location: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> bool:
+        """Update a company's information."""
+        row_index = self._find_row_by_id(SHEET_COMPANIES, company_id)
+        if not row_index:
+            return False
+
+        last_updated = get_current_timestamp()
+
+        # Get current values
+        current = self.get_company_by_id(company_id)
+        if not current:
+            return False
+
+        # Prepare updates
+        updates = []
+        if company_name is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!B{row_index}", "values": [[company_name]]})
+        if company_type is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!C{row_index}", "values": [[company_type]]})
+        if email is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!D{row_index}", "values": [[email]]})
+        if phone is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!E{row_index}", "values": [[phone]]})
+        if website is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!F{row_index}", "values": [[website]]})
+        if location is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!G{row_index}", "values": [[location]]})
+        if notes is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!H{row_index}", "values": [[notes]]})
+
+        # Always update last_updated
+        updates.append({"range": f"{SHEET_COMPANIES}!J{row_index}", "values": [[last_updated]]})
+
+        if updates:
+            self.service.spreadsheets().values().batchUpdate(
+                spreadsheetId=self.spreadsheet_id,
+                body={"data": updates, "valueInputOption": "RAW"}
+            ).execute()
+
+        return True
+
+    def delete_company(self, company_id: str) -> bool:
+        """Delete a company from the Companies sheet."""
+        row_index = self._find_row_by_id(SHEET_COMPANIES, company_id)
+        if not row_index:
+            return False
+
+        try:
+            # Note: Deleting rows requires getting the sheet ID first
+            # This is a simplified version - you may need to implement proper row deletion
+            # For now, we'll just clear the row
+            self.service.spreadsheets().values().clear(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{SHEET_COMPANIES}!A{row_index}:J{row_index}"
+            ).execute()
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to delete company: {e}")
+            return False

@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+{% block title %}Companies - JobFlow{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Companies Database</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage your company contacts and information</p>
+        </div>
+        <button onclick="showAddCompanyModal()" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i> Add Company
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="stat-card-minimal">
+            <p class="text-sm text-gray-600">Total Companies</p>
+            <p class="text-3xl font-bold text-gray-900">{{ companies|length }}</p>
+        </div>
+        <div class="stat-card-minimal">
+            <p class="text-sm text-gray-600">With Email</p>
+            <p class="text-3xl font-bold text-green-600">{{ companies|selectattr('email')|list|length }}</p>
+        </div>
+        <div class="stat-card-minimal">
+            <p class="text-sm text-gray-600">Without Email</p>
+            <p class="text-3xl font-bold text-yellow-600">{{ (companies|length) - (companies|selectattr('email')|list|length) }}</p>
+        </div>
+        <div class="stat-card-minimal">
+            <p class="text-sm text-gray-600">Added This Month</p>
+            <p class="text-3xl font-bold text-blue-600">{{ recent_count }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" id="searchInput" placeholder="Search by name, type, location..."
+                       class="form-input" onkeyup="filterCompanies()">
+            </div>
+
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Type</label>
+                <select id="typeFilter" class="form-input" onchange="filterCompanies()">
+    <option value="">All Types</option>
+    <option value="oil & gas">Oil & Gas</option>
+    <option value="petrochemical">Petrochemical</option>
+    <option value="power & energy">Power & Energy</option>
+    <option value="manufacturing / industrial plants">Manufacturing / Industrial Plants</option>
+    <option value="food processing / food industry">Food Processing / Food Industry</option>
+    <option value="consumer goods">Consumer Goods</option>
+</select>
+
+            </div>
+
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email Status</label>
+                <select id="emailFilter" class="form-input" onchange="filterCompanies()">
+                    <option value="">All</option>
+                    <option value="with">With Email</option>
+                    <option value="without">Without Email</option>
+                </select>
+            </div>
+
+            <button onclick="clearFilters()" class="btn-secondary">
+                <i class="fas fa-times mr-1"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Companies Table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        {% if companies %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="companiesTable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Added</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for company in companies %}
+                    <tr class="hover:bg-gray-50 company-row"
+                        data-name="{{ company.name|lower }}"
+                        data-type="{{ company.type|lower }}"
+                        data-location="{{ company.location|lower }}"
+                        data-has-email="{{ 'yes' if company.email else 'no' }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                                    <span class="text-white font-bold text-lg">{{ company.name[0]|upper }}</span>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ company.name }}</div>
+                                    {% if company.website %}
+                                    <a href="{{ company.website }}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-external-link-alt mr-1"></i>Website
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if company.type %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+    {% if company.type == 'Oil & Gas' %}bg-orange-100 text-orange-800
+    {% elif company.type == 'Petrochemical' %}bg-red-100 text-red-800
+    {% elif company.type == 'Power & Energy' %}bg-yellow-100 text-yellow-800
+    {% elif company.type == 'Manufacturing / Industrial Plants' %}bg-blue-100 text-blue-800
+    {% elif company.type == 'Food Processing / Food Industry' %}bg-green-100 text-green-800
+    {% elif company.type == 'Consumer Goods' %}bg-purple-100 text-purple-800
+    {% else %}bg-gray-100 text-gray-800{% endif %}">
+    {{ company.type }}
+</span>
+
+                            {% else %}
+                            <span class="text-gray-400 text-sm">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">
+                                {% if company.email %}
+                                <div class="flex items-center mb-1">
+                                    <i class="fas fa-envelope text-green-500 mr-2"></i>
+                                    <a href="mailto:{{ company.email }}" class="text-blue-600 hover:text-blue-800">
+                                        {{ company.email }}
+                                    </a>
+                                </div>
+                                {% else %}
+                                <div class="flex items-center mb-1">
+                                    <i class="fas fa-envelope text-gray-300 mr-2"></i>
+                                    <span class="text-gray-400 text-xs">No email</span>
+                                </div>
+                                {% endif %}
+
+                                {% if company.phone %}
+                                <div class="flex items-center text-xs text-gray-500">
+                                    <i class="fas fa-phone mr-2"></i>
+                                    {{ company.phone }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">
+                                {% if company.location %}
+                                <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
+                                {{ company.location }}
+                                {% else %}
+                                <span class="text-gray-400">—</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ company.added_date[:10] if company.added_date else 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <button onclick="viewCompany('{{ company.id }}')"
+                                        class="text-blue-600 hover:text-blue-900" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editCompany('{{ company.id }}')"
+                                        class="text-green-600 hover:text-green-900" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if company.email %}
+                                <a href="/send?company={{ company.name }}&email={{ company.email }}"
+                                   class="text-purple-600 hover:text-purple-900" title="Send Application">
+                                    <i class="fas fa-paper-plane"></i>
+                                </a>
+                                {% endif %}
+                                <button onclick="deleteCompany('{{ company.id }}', '{{ company.name }}')"
+                                        class="text-red-600 hover:text-red-900" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-building text-gray-400 text-5xl mb-4"></i>
+            <p class="text-gray-500 text-lg">No companies yet</p>
+            <button onclick="showAddCompanyModal()" class="mt-4 text-blue-600 hover:text-blue-800 font-medium">
+                <i class="fas fa-plus mr-1"></i> Add your first company
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Company Modal -->
+<div id="companyModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+                <!-- Modal Header -->
+                <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-900" id="modalTitle">
+                            <i class="fas fa-building text-blue-600 mr-2"></i>
+                            Add New Company
+                        </h3>
+                        <button onclick="closeCompanyModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <form id="companyForm" class="p-6 space-y-4">
+                    <input type="hidden" id="companyId" name="id">
+
+                    <!-- Company Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Company Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="companyName" name="name" required
+                               placeholder="e.g., Tesla, Microsoft, Sonatrach"
+                               class="form-input">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                            <select id="companyType" name="type" class="form-input" required>
+    <option value="Oil & Gas" selected>Oil & Gas</option>
+    <option value="Petrochemical">Petrochemical</option>
+    <option value="Power & Energy">Power & Energy</option>
+    <option value="Manufacturing / Industrial Plants">Manufacturing / Industrial Plants</option>
+    <option value="Food Processing / Food Industry">Food Processing / Food Industry</option>
+    <option value="Consumer Goods">Consumer Goods</option>
+</select>
+
+                        </div>
+
+                        <!-- Location -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                            <input type="text" id="companyLocation" name="location"
+                                   placeholder="City, Country"
+                                   class="form-input">
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="border-t pt-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Contact Information</h4>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-envelope text-gray-400 mr-1"></i> Email
+                                </label>
+                                <input type="email" id="companyEmail" name="email"
+                                       placeholder="hr@company.com"
+                                       class="form-input">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle text-blue-500"></i>
+                                    Required to send applications
+                                </p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-phone text-gray-400 mr-1"></i> Phone
+                                </label>
+                                <input type="tel" id="companyPhone" name="phone"
+                                       placeholder="+1-234-567-8900"
+                                       class="form-input">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-globe text-gray-400 mr-1"></i> Website
+                                </label>
+                                <input type="url" id="companyWebsite" name="website"
+                                       placeholder="https://company.com"
+                                       class="form-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-sticky-note text-gray-400 mr-1"></i> Notes
+                        </label>
+                        <textarea id="companyNotes" name="notes" rows="3"
+                                  placeholder="Additional information, contacts, etc."
+                                  class="form-input"></textarea>
+                    </div>
+                </form>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+                    <button type="button" onclick="closeCompanyModal()" class="btn-secondary">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="button" onclick="submitCompany()" id="submitBtn" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>Save Company
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showAddCompanyModal() {
+    document.getElementById('companyModal').classList.remove('hidden');
+    document.getElementById('companyForm').reset();
+    document.getElementById('companyId').value = '';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-building text-blue-600 mr-2"></i>Add New Company';
+}
+
+function closeCompanyModal() {
+    document.getElementById('companyModal').classList.add('hidden');
+}
+
+async function submitCompany() {
+    const form = document.getElementById('companyForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById('submitBtn');
+    const originalContent = submitBtn.innerHTML;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+    try {
+        const companyId = document.getElementById('companyId').value;
+        const url = companyId ? `/api/companies/${companyId}` : '/api/companies';
+        const method = companyId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(companyId ? 'Company updated successfully!' : 'Company added successfully!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalContent;
+            showToast('Failed to save company: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+
+async function viewCompany(id) {
+    window.location.href = `/companies/${id}`;
+}
+
+async function editCompany(id) {
+    try {
+        const response = await fetch(`/api/companies/${id}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const company = data.company;
+
+            document.getElementById('companyId').value = company.id;
+            document.getElementById('companyName').value = company.name;
+            document.getElementById('companyType').value = company.type || '';
+            document.getElementById('companyLocation').value = company.location || '';
+            document.getElementById('companyEmail').value = company.email || '';
+            document.getElementById('companyPhone').value = company.phone || '';
+            document.getElementById('companyWebsite').value = company.website || '';
+            document.getElementById('companyNotes').value = company.notes || '';
+
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-blue-600 mr-2"></i>Edit Company';
+            document.getElementById('companyModal').classList.remove('hidden');
+        } else {
+            showToast('Failed to load company data', 'error');
+        }
+    } catch (error) {
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+
+async function deleteCompany(id, name) {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/companies/${id}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Company deleted successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast('Failed to delete company: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Network error: ' + error.message, 'error');
+    }
+}
+
+function filterCompanies() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
+    const emailFilter = document.getElementById('emailFilter').value;
+
+    const rows = document.querySelectorAll('.company-row');
+
+    rows.forEach(row => {
+        const name = row.dataset.name;
+        const type = row.dataset.type;
+        const location = row.dataset.location;
+        const hasEmail = row.dataset.hasEmail;
+
+        let show = true;
+
+        // Search filter
+        if (searchTerm && !name.includes(searchTerm) && !type.includes(searchTerm) && !location.includes(searchTerm)) {
+            show = false;
+        }
+
+        // Type filter
+        if (typeFilter && type !== typeFilter) {
+            show = false;
+        }
+
+        // Email filter
+        if (emailFilter === 'with' && hasEmail !== 'yes') {
+            show = false;
+        } else if (emailFilter === 'without' && hasEmail !== 'no') {
+            show = false;
+        }
+
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('emailFilter').value = '';
+    filterCompanies();
+}
+
+// Close modal on outside click
+document.getElementById('companyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'companyModal') {
+        closeCompanyModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !document.getElementById('companyModal').classList.contains('hidden')) {
+        closeCompanyModal();
+    }
+});
+</script>
+{% endblock %}
