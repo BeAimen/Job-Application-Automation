@@ -6,16 +6,26 @@ Thumbs.db
 .vscode/
 .idea/
 *.iml
+*.swp
+*.swo
+*~
 
 # ===============================
 # Python
 # ===============================
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
 
+# Virtual environments
 .venv/
 venv/
 env/
+ENV/
+env.bak/
+venv.bak/
 
 # ===============================
 # Build & tooling
@@ -23,41 +33,99 @@ env/
 build/
 dist/
 *.egg-info/
+.eggs/
+*.egg
+
+# Testing
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
+.tox/
 .coverage
+.coverage.*
 htmlcov/
+.hypothesis/
+*.cover
+.cache
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Linting
+.ruff_cache/
+.pylint.d/
 
 # ===============================
 # Logs & runtime
 # ===============================
 logs/
 *.log
+pip-log.txt
+pip-delete-this-directory.txt
 
 # ===============================
 # Credentials & Secrets (CRITICAL)
 # ===============================
-credentials
+credentials/
 credentials.*
-**/credentials
+**/credentials/
 **/credentials.*
 token.json
+*.pem
+*.key
+*.p12
+service_account.json
+oauth_credentials.json
 
-# ===============================
-# Env files
-# ===============================
+# API keys and secrets
 .env
 .env.*
+!.env.example
+secrets.json
+config.local.*
 
 # ===============================
-# Local data & storage
+# User Data & Attachments (IMPORTANT)
+# ===============================
+attachments/
+!attachments/en/.gitkeep
+!attachments/fr/.gitkeep
+
+# User settings and data
+settings_data/
+!settings_data/.gitkeep
+templates_data/templates.json
+!templates_data/templates.example.json
+
+# Uploaded files
+uploads/
+static/uploads/
+
+# ===============================
+# Database & Storage
 # ===============================
 data/
 storage/
 local_data/
 *.db
+*.sqlite
 *.sqlite3
+*.db-journal
+
+# ===============================
+# Reports & Exports
+# ===============================
+exports/
+reports/
+output/
+*.csv
+*.xlsx
+*.xls
+*.pdf
+!**/example.pdf
+!**/sample.csv
 
 # ===============================
 # Frontend (if any)
@@ -65,15 +133,10 @@ local_data/
 node_modules/
 dist/
 build/
-
-# ===============================
-# Reports & exports
-# ===============================
-exports/
-reports/
-*.csv
-*.xlsx
-*.pdf
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # ===============================
 # Cache & temp
@@ -81,15 +144,92 @@ reports/
 .cache/
 .tmp/
 tmp/
+temp/
+*.tmp
+*.temp
+.sass-cache/
 
 # ===============================
-# Docker (optional)
+# Docker
 # ===============================
 .env.docker
 docker-compose.override.yml
+.dockerignore
 
 # ===============================
-# Misc
+# IDE specific
+# ===============================
+# PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+!.vscode/settings.json.example
+!.vscode/extensions.json
+!.vscode/launch.json.example
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ===============================
+# Jupyter Notebooks
+# ===============================
+.ipynb_checkpoints/
+*.ipynb
+
+# ===============================
+# Backups & Archives
 # ===============================
 *.bak
+*.backup
 *.old
+*.orig
+*.save
+*.swp
+*.swo
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# ===============================
+# OS generated files
+# ===============================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ===============================
+# Project Specific
+# ===============================
+# Session data
+sessions/
+*.session
+
+# Monitoring & analytics data
+monitoring/
+analytics_cache/
+
+# Local test files
+test_output/
+scratch/
+playground/
+
+# Documentation builds
+docs/_build/
+site/
+
+# ===============================
+# Keep these folders but ignore content
+# ===============================
+!**/.gitkeep
