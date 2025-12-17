@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Companies - JobFlow{% endblock %}
+{% block nav_companies %}active{% endblock %}
 
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
@@ -33,22 +34,6 @@
             <p id="addedThisMonth" class="text-3xl font-bold text-blue-600">{{ recent_count }}</p>
         </div>
     </div>
-
-    {# Preview first company's emails if any exist #}
-    {% if companies and companies|length > 0 %}
-        {% set first_company = companies[0] %}
-        {% set emails = first_company.email.split(',') if first_company.email else [] %}
-        <!-- Shows first 2 emails, with "+X more" indicator -->
-        {% for email in emails[:2] %}
-        <div class="flex items-center mb-1">
-            <i class="fas fa-envelope text-green-500 mr-2 text-xs"></i>
-            <a href="mailto:{{ email.strip() }}">{{ email.strip() }}</a>
-        </div>
-        {% endfor %}
-        {% if emails|length > 2 %}
-        <div class="text-xs text-gray-500">+{{ emails|length - 2 }} more</div>
-        {% endif %}
-    {% endif %}
 
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4 mb-6">
@@ -87,9 +72,8 @@
         </div>
     </div>
 
-    <!-- Companies Table + Empty Placeholder -->
+    <!-- Companies Table -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        <!-- Empty placeholder -->
         <div id="noCompaniesPlaceholder" class="text-center py-12" style="{{ 'display:none;' if companies else '' }}">
             <i class="fas fa-building text-gray-400 text-5xl mb-4"></i>
             <p class="text-gray-500 text-lg">No companies yet</p>
@@ -98,7 +82,6 @@
             </button>
         </div>
 
-        <!-- Table (rendered even when empty) -->
         <div id="companiesTableWrapper" class="overflow-x-auto" style="{{ '' if companies else 'display:none;' }}">
             <table class="min-w-full divide-y divide-gray-200" id="companiesTable">
                 <thead class="bg-gray-50">
@@ -143,15 +126,19 @@
                             <span class="text-gray-400 text-sm">—</span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4">
                             <div class="text-sm text-gray-900">
                                 {% if company.email %}
+                                {% set emails = company.email.split(',') %}
                                 <div class="flex items-center mb-1">
                                     <i class="fas fa-envelope text-green-500 mr-2"></i>
-                                    <a href="mailto:{{ company.email }}" class="text-blue-600 hover:text-blue-800">
-                                        {{ company.email }}
+                                    <a href="mailto:{{ emails[0].strip() }}" class="text-blue-600 hover:text-blue-800">
+                                        {{ emails[0].strip() }}
                                     </a>
                                 </div>
+                                {% if emails|length > 1 %}
+                                <div class="text-xs text-gray-500 ml-6">+{{ emails|length - 1 }} more</div>
+                                {% endif %}
                                 {% else %}
                                 <span class="text-gray-400 text-xs">No email</span>
                                 {% endif %}
@@ -165,8 +152,21 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
-                                <button onclick="editCompany('{{ company.id }}')" class="text-green-600 hover:text-green-900"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteCompany('{{ company.id }}','{{ company.name|escape }}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                                <button onclick="viewCompany('{{ company.id }}')"
+                                        class="text-blue-600 hover:text-blue-900 p-2 rounded hover:bg-blue-50"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editCompany('{{ company.id }}')"
+                                        class="text-green-600 hover:text-green-900 p-2 rounded hover:bg-green-50"
+                                        title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteCompany('{{ company.id }}','{{ company.name|escape }}')"
+                                        class="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -177,8 +177,8 @@
     </div>
 </div>
 
-<!-- Modal -->
-<div id="companyModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+<!-- Add/Edit Modal -->
+<div id="companyModal" class="modal hidden" role="dialog" aria-modal="true">
     <div id="companyModalOverlay" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
@@ -189,13 +189,13 @@
                             <i class="fas fa-building text-blue-600 mr-2"></i>
                             Add New Company
                         </h3>
-                        <button type="button" id="modalCloseBtn" class="text-gray-400 hover:text-gray-600" aria-label="Close modal">
+                        <button type="button" onclick="closeCompanyModal()" class="text-gray-400 hover:text-gray-600">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
                 </div>
 
-                <form id="companyForm" class="p-6 space-y-4" onsubmit="event.preventDefault(); submitCompany();">
+                <form id="companyForm" class="p-6 space-y-4">
                     <input type="hidden" id="companyId" name="id">
 
                     <div>
@@ -205,6 +205,10 @@
                         <input type="text" id="companyName" name="name" required
                                placeholder="e.g., Tesla, Microsoft, Sonatrach"
                                class="form-input">
+                        <p id="duplicateWarning" class="hidden mt-1 text-sm text-red-600">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            A company with this name already exists
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -236,12 +240,21 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-envelope text-gray-400 mr-1"></i> Email Addresses
                                 </label>
-                                <input type="text" id="companyEmail" name="email"
-                                       placeholder="hr@company.com, jobs@company.com, careers@company.com"
-                                       class="form-input">
+                                <div id="emailChipsContainer" class="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[42px] bg-gray-50 mb-2">
+                                    <!-- Email chips will be added here -->
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="emailInput"
+                                           placeholder="Enter email and press Enter"
+                                           class="form-input flex-1">
+                                    <button type="button" onclick="addEmailChip()" class="btn-secondary">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="companyEmail" name="email">
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-info-circle text-blue-500"></i>
-                                    Multiple emails separated by commas (required to send applications)
+                                    Add multiple emails - press Enter or click + after each
                                 </p>
                             </div>
 
@@ -276,7 +289,7 @@
                 </form>
 
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-                    <button type="button" id="cancelBtn" class="btn-secondary">
+                    <button type="button" onclick="closeCompanyModal()" class="btn-secondary">
                         <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                     <button type="button" onclick="submitCompany()" id="submitBtn" class="btn-primary">
@@ -287,208 +300,421 @@
         </div>
     </div>
 </div>
+
+<!-- View Details Modal -->
+<div id="viewModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeViewModal()"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl">
+                <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-white">
+                            <i class="fas fa-building mr-2"></i>
+                            <span id="viewCompanyName"></span>
+                        </h3>
+                        <button type="button" onclick="closeViewModal()" class="text-white hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="viewContent" class="p-6">
+                    <!-- Content loaded dynamically -->
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+                    <button type="button" onclick="closeViewModal()" class="btn-secondary">
+                        <i class="fas fa-times mr-2"></i>Close
+                    </button>
+                    <button type="button" onclick="editFromView()" id="editFromViewBtn" class="btn-primary">
+                        <i class="fas fa-edit mr-2"></i>Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.email-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.email-chip button {
+    margin-left: 0.5rem;
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.email-chip button:hover {
+    opacity: 1;
+}
+
+.spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Helpers
-function showAddCompanyModal(){
-    const modal = document.getElementById('companyModal');
-    const overlay = document.getElementById('companyModalOverlay');
+// Global state
+let existingCompanies = {{ companies|map(attribute='name')|map('lower')|list|tojson }};
+let currentViewId = null;
+let emailChips = [];
+
+// Email chip management
+function addEmailChip() {
+    const input = document.getElementById('emailInput');
+    const email = input.value.trim();
+
+    if (!email) return;
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast('Invalid email format', 'error');
+        return;
+    }
+
+    // Check for duplicates
+    if (emailChips.includes(email)) {
+        showToast('Email already added', 'warning');
+        return;
+    }
+
+    emailChips.push(email);
+    renderEmailChips();
+    input.value = '';
+    updateHiddenEmailField();
+}
+
+function removeEmailChip(email) {
+    emailChips = emailChips.filter(e => e !== email);
+    renderEmailChips();
+    updateHiddenEmailField();
+}
+
+function renderEmailChips() {
+    const container = document.getElementById('emailChipsContainer');
+    container.innerHTML = emailChips.map(email => `
+        <div class="email-chip">
+            ${escapeHtml(email)}
+            <button type="button" onclick="removeEmailChip('${escapeAttr(email)}')" class="hover:scale-110">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function updateHiddenEmailField() {
+    document.getElementById('companyEmail').value = emailChips.join(', ');
+}
+
+// Enter key handler for email input
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('emailInput');
+    if (emailInput) {
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addEmailChip();
+            }
+        });
+    }
+
+    // Duplicate name checker
+    const nameInput = document.getElementById('companyName');
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            checkDuplicate(this.value);
+        });
+    }
+});
+
+function checkDuplicate(name) {
+    const warning = document.getElementById('duplicateWarning');
+    const submitBtn = document.getElementById('submitBtn');
+    const currentId = document.getElementById('companyId').value;
+
+    const nameLower = name.trim().toLowerCase();
+
+    // Check if exists (but allow if editing the same company)
+    const isDuplicate = existingCompanies.includes(nameLower) && !currentId;
+
+    if (isDuplicate) {
+        warning.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        warning.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function showAddCompanyModal() {
     document.getElementById('companyForm').reset();
     document.getElementById('companyId').value = '';
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-building text-blue-600 mr-2"></i>Add New Company';
-
-    // show modal
-    modal.classList.remove('hidden');
-    modal.setAttribute('aria-hidden', 'false');
-    overlay.style.display = '';
-    // prevent background scroll
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-
-    // focus first input
-    setTimeout(()=>{ document.getElementById('companyName').focus(); }, 50);
-}
-function closeCompanyModal(){
-    const modal = document.getElementById('companyModal');
-    const overlay = document.getElementById('companyModalOverlay');
-    modal.classList.add('hidden');
-    modal.setAttribute('aria-hidden', 'true');
-    overlay.style.display = 'none';
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-    // return focus to Add button
-    try{ document.querySelector('.btn-primary').focus(); }catch(e){}
-    // clear form for safety
-    try{ document.getElementById('companyForm').reset(); }catch(e){}
+    document.getElementById('duplicateWarning').classList.add('hidden');
+    emailChips = [];
+    renderEmailChips();
+    document.getElementById('companyModal').classList.remove('hidden');
+    document.getElementById('companyName').focus();
 }
 
-// Escape helpers
-function escapeHtml(s){ if(!s && s !== 0) return ''; return String(s).replace(/[&<>"']/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]); }); }
-function escapeAttr(s){ if(!s && s !== 0) return ''; return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+function closeCompanyModal() {
+    document.getElementById('companyModal').classList.add('hidden');
+    document.getElementById('companyForm').reset();
+    emailChips = [];
+}
 
-// Render a table row from company object
-function renderCompanyRow(company){
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-gray-50 company-row';
-    tr.dataset.id = company.id || '';
-    tr.dataset.name = (company.name || '').toLowerCase();
-    tr.dataset.type = (company.type || '').toLowerCase();
-    tr.dataset.location = (company.location || '').toLowerCase();
-    tr.dataset.hasEmail = (company.email ? 'yes' : 'no');
+async function editCompany(id) {
+    try {
+        const response = await fetch(`/api/companies/${id}`);
+        const data = await response.json();
 
-    const nameChar = (company.name && company.name[0]) ? company.name[0].toUpperCase() : '';
+        if (data.success && data.company) {
+            const company = data.company;
 
-    const nameCell = `
-        <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">${escapeHtml(nameChar)}</span>
+            document.getElementById('companyId').value = company.id;
+            document.getElementById('companyName').value = company.name;
+            document.getElementById('companyType').value = company.type || 'Oil & Gas';
+            document.getElementById('companyLocation').value = company.location || '';
+            document.getElementById('companyPhone').value = company.phone || '';
+            document.getElementById('companyWebsite').value = company.website || '';
+            document.getElementById('companyNotes').value = company.notes || '';
+
+            // Load emails into chips
+            emailChips = company.email ? company.email.split(',').map(e => e.trim()).filter(e => e) : [];
+            renderEmailChips();
+            updateHiddenEmailField();
+
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-blue-600 mr-2"></i>Edit Company';
+            document.getElementById('companyModal').classList.remove('hidden');
+        } else {
+            showToast('Failed to load company details', 'error');
+        }
+    } catch (error) {
+        showToast('Error loading company: ' + error.message, 'error');
+    }
+}
+
+async function viewCompany(id) {
+    currentViewId = id;
+
+    try {
+        const response = await fetch(`/api/companies/${id}`);
+        const data = await response.json();
+
+        if (data.success && data.company) {
+            const company = data.company;
+
+            document.getElementById('viewCompanyName').textContent = company.name;
+
+            const emails = company.email ? company.email.split(',').map(e => e.trim()).filter(e => e) : [];
+
+            document.getElementById('viewContent').innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Type</p>
+                            <p class="mt-1 text-base text-gray-900">${escapeHtml(company.type || '—')}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Location</p>
+                            <p class="mt-1 text-base text-gray-900">${escapeHtml(company.location || '—')}</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">Contact Information</h4>
+
+                        ${emails.length > 0 ? `
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-gray-500 mb-2">Email Addresses</p>
+                                <div class="space-y-2">
+                                    ${emails.map((email, i) => `
+                                        <div class="flex items-center p-2 bg-blue-50 rounded">
+                                            <i class="fas fa-envelope text-blue-500 mr-2"></i>
+                                            <a href="mailto:${escapeHtml(email)}" class="text-blue-600 hover:text-blue-800">
+                                                ${escapeHtml(email)}
+                                            </a>
+                                            ${i === 0 ? '<span class="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded">Primary</span>' : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : '<p class="text-gray-400 text-sm mb-4">No email addresses</p>'}
+
+                        ${company.phone ? `
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-gray-500">Phone</p>
+                                <p class="mt-1 text-base text-gray-900">
+                                    <i class="fas fa-phone text-gray-400 mr-2"></i>
+                                    <a href="tel:${escapeHtml(company.phone)}">${escapeHtml(company.phone)}</a>
+                                </p>
+                            </div>
+                        ` : ''}
+
+                        ${company.website ? `
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-gray-500">Website</p>
+                                <p class="mt-1 text-base text-gray-900">
+                                    <i class="fas fa-globe text-gray-400 mr-2"></i>
+                                    <a href="${escapeHtml(company.website)}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                        ${escapeHtml(company.website)} <i class="fas fa-external-link-alt text-xs"></i>
+                                    </a>
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    ${company.notes ? `
+                        <div class="border-t pt-4">
+                            <p class="text-sm font-medium text-gray-500 mb-2">Notes</p>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-gray-700">
+                                ${escapeHtml(company.notes)}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="border-t pt-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-500">Added</p>
+                                <p class="text-gray-900">${company.added_date ? company.added_date.slice(0, 10) : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500">Last Updated</p>
+                                <p class="text-gray-900">${company.last_updated ? company.last_updated.slice(0, 10) : 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">${escapeHtml(company.name || '')}</div>
-                    ${company.website ? `<a href="${escapeHtml(company.website)}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800"><i class="fas fa-external-link-alt mr-1"></i>Website</a>` : ''}
-                </div>
-            </div>
-        </td>
-    `;
+            `;
 
-    const typeCell = `<td class="px-6 py-4 whitespace-nowrap">${company.type ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${escapeHtml(company.type)}</span>` : '<span class="text-gray-400 text-sm">—</span>'}</td>`;
-
-    const contactCell = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${company.email ? `<div class="flex items-center mb-1"><i class="fas fa-envelope text-green-500 mr-2"></i><a href="mailto:${escapeHtml(company.email)}" class="text-blue-600 hover:text-blue-800">${escapeHtml(company.email)}</a></div>` : '<span class="text-gray-400 text-xs">No email</span>'}</div></td>`;
-
-    const locationCell = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${escapeHtml(company.location || '—')}</td>`;
-    const addedCell = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${escapeHtml((company.added_date || '').slice(0,10) || 'N/A')}</td>`;
-    // Use data- attributes safely for onclick values
-    const safeId = escapeAttr(company.id || '');
-    const safeName = escapeAttr(company.name || '');
-    const actionsCell = `<td class="px-6 py-4 whitespace-nowrap text-sm font-medium"><div class="flex space-x-2"><button onclick="editCompany('${safeId}')" class="text-green-600 hover:text-green-900"><i class="fas fa-edit"></i></button><button onclick="deleteCompany('${safeId}','${safeName}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button></div></td>`;
-
-    tr.innerHTML = nameCell + typeCell + contactCell + locationCell + addedCell + actionsCell;
-    return tr;
+            document.getElementById('viewModal').classList.remove('hidden');
+        } else {
+            showToast('Failed to load company details', 'error');
+        }
+    } catch (error) {
+        showToast('Error loading company: ' + error.message, 'error');
+    }
 }
 
-// Update numeric stat by delta
-function incrementStat(id, delta){ const el = document.getElementById(id); if(!el) return; const v = parseInt(el.textContent||'0',10)||0; el.textContent = v + delta; }
-
-// Simple toast (fallback)
-function showToast(message, type){
-    // minimal unobtrusive toast: uses alert as fallback
-    try{
-        const existing = document.getElementById('cf-toast');
-        if(existing) existing.remove();
-        const toast = document.createElement('div');
-        toast.id = 'cf-toast';
-        toast.setAttribute('role','status');
-        toast.style.position = 'fixed';
-        toast.style.right = '20px';
-        toast.style.top = '20px';
-        toast.style.zIndex = '9999';
-        toast.style.padding = '10px 14px';
-        toast.style.borderRadius = '8px';
-        toast.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)';
-        toast.style.background = (type === 'error' ? '#fee2e2' : '#ecfdf5');
-        toast.style.color = (type === 'error' ? '#b91c1c' : '#065f46');
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(()=>{ toast.remove(); }, 3500);
-    }catch(e){ alert(message); }
+function closeViewModal() {
+    document.getElementById('viewModal').classList.add('hidden');
+    currentViewId = null;
 }
 
-// Submit company via AJAX and insert row without reload
-async function submitCompany(){
+function editFromView() {
+    closeViewModal();
+    if (currentViewId) {
+        editCompany(currentViewId);
+    }
+}
+
+async function submitCompany() {
     const form = document.getElementById('companyForm');
-    if(!form.checkValidity()){ form.reportValidity(); return; }
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
 
     const btn = document.getElementById('submitBtn');
     const orig = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner mr-2"></span>Saving...';
 
     const data = new FormData(form);
     const companyId = document.getElementById('companyId').value;
     const url = companyId ? `/api/companies/${encodeURIComponent(companyId)}` : '/api/companies';
     const method = companyId ? 'PUT' : 'POST';
 
-    try{
+    try {
         const res = await fetch(url, { method, body: data });
-        // if server returns non-json, this will throw and go to catch
         const json = await res.json();
 
-        if(json && json.success){
-            // Always close modal on success (ensure "add panel" disappears)
+        if (json && json.success) {
             closeCompanyModal();
+            showToast(companyId ? 'Company updated!' : 'Company added!', 'success');
 
-            // If backend returned created company object, use it to update DOM
-            const company = json.company || json.updated_company || null;
-
-            if(company){
-                // ensure table visible
-                document.getElementById('noCompaniesPlaceholder').style.display = 'none';
-                document.getElementById('companiesTableWrapper').style.display = '';
-
-                const tbody = document.getElementById('companiesTbody');
-                const row = renderCompanyRow(company);
-                // insert at top
-                if(tbody.firstChild) tbody.insertBefore(row, tbody.firstChild);
-                else tbody.appendChild(row);
-
-                // update stats
-                incrementStat('totalCompanies', 1);
-                if(company.email) incrementStat('withEmailCount',1); else incrementStat('withoutEmailCount',1);
-
-                // if added this month
-                try{ const added = new Date(company.added_date); const now = new Date(); if(added.getFullYear()===now.getFullYear() && added.getMonth()===now.getMonth()){ incrementStat('addedThisMonth',1); } }catch(e){}
-
-                showToast('Company saved', 'success');
-            } else {
-                // fallback: server didn't return object — reload as last resort
-                window.location.reload();
-            }
-            // clear form
-            form.reset();
+            // Reload page to refresh data
+            setTimeout(() => window.location.reload(), 500);
         } else {
-            throw new Error(json && json.error ? json.error : 'Save failed');
+            throw new Error(json.error || 'Save failed');
         }
-    }catch(err){
-        showToast('Error: '+err.message,'error');
-    }finally{
-        btn.disabled = false; btn.innerHTML = orig;
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
     }
 }
 
-// Navigate to company detail/edit page
-function editCompany(id){ if(!id) return; window.location.href = '/companies/' + encodeURIComponent(id); }
+async function deleteCompany(id, name) {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
 
-// Delete via API and remove row from DOM
-async function deleteCompany(id, name){
-    if(!confirm('Are you sure you want to delete "' + name + '"? This action cannot be undone.')) return;
-    try{
+    // Find the row and add spinner
+    const row = document.querySelector(`.company-row[data-id="${id}"]`);
+    if (row) {
+        const actionsCell = row.querySelector('td:last-child');
+        actionsCell.innerHTML = '<span class="spinner"></span>';
+    }
+
+    try {
         const res = await fetch('/api/companies/' + encodeURIComponent(id), { method: 'DELETE' });
         const json = await res.json();
-        if(json && json.success){
-            const row = document.querySelector(`.company-row[data-id="${id}"]`);
-            if(row) {
-                const hasEmail = row.dataset.hasEmail === 'yes';
-                row.remove();
-                incrementStat('totalCompanies', -1);
-                if(hasEmail) incrementStat('withEmailCount', -1); else incrementStat('withoutEmailCount', -1);
 
-                const tbody = document.getElementById('companiesTbody');
-                if(!tbody || tbody.children.length === 0){
-                    document.getElementById('companiesTableWrapper').style.display = 'none';
-                    document.getElementById('noCompaniesPlaceholder').style.display = '';
-                }
+        if (json && json.success) {
+            if (row) row.remove();
+
+            // Update stats
+            const totalEl = document.getElementById('totalCompanies');
+            totalEl.textContent = parseInt(totalEl.textContent) - 1;
+
+            // Check if table is empty
+            const tbody = document.getElementById('companiesTbody');
+            if (!tbody || tbody.children.length === 0) {
+                document.getElementById('companiesTableWrapper').style.display = 'none';
+                document.getElementById('noCompaniesPlaceholder').style.display = '';
             }
+
             showToast('Company deleted', 'success');
         } else {
             throw new Error(json.error || 'Delete failed');
         }
-    }catch(err){ showToast('Error: '+err.message,'error'); }
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+        // Reload on error to restore UI
+        setTimeout(() => window.location.reload(), 1000);
+    }
 }
 
-// Filtering
-function filterCompanies(){
+function filterCompanies() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
     const emailFilter = document.getElementById('emailFilter').value;
@@ -501,27 +727,37 @@ function filterCompanies(){
         const hasEmail = row.dataset.hasEmail || 'no';
 
         let show = true;
-        if(searchTerm && !name.includes(searchTerm) && !type.includes(searchTerm) && !location.includes(searchTerm)) show = false;
-        if(typeFilter && type !== typeFilter) show = false;
-        if(emailFilter === 'with' && hasEmail !== 'yes') show = false;
-        if(emailFilter === 'without' && hasEmail !== 'no') show = false;
+        if (searchTerm && !name.includes(searchTerm) && !type.includes(searchTerm) && !location.includes(searchTerm)) show = false;
+        if (typeFilter && type !== typeFilter) show = false;
+        if (emailFilter === 'with' && hasEmail !== 'yes') show = false;
+        if (emailFilter === 'without' && hasEmail !== 'no') show = false;
 
         row.style.display = show ? '' : 'none';
     });
 }
-function clearFilters(){ document.getElementById('searchInput').value=''; document.getElementById('typeFilter').value=''; document.getElementById('emailFilter').value=''; filterCompanies(); }
 
-// Modal close handlers
-document.getElementById('companyModalOverlay').addEventListener('click', ()=>{ closeCompanyModal(); });
-document.getElementById('modalCloseBtn').addEventListener('click', ()=>{ closeCompanyModal(); });
-document.getElementById('cancelBtn').addEventListener('click', ()=>{ closeCompanyModal(); });
-document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !document.getElementById('companyModal').classList.contains('hidden')) closeCompanyModal(); });
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('emailFilter').value = '';
+    filterCompanies();
+}
 
-// Accessibility: close modal if focus moves outside while open (optional safety)
-document.addEventListener('focusin', (e)=>{
-    const modal = document.getElementById('companyModal');
-    if(modal && !modal.classList.contains('hidden')){
-        // noop for now — keeping access but not forcing focus trap
+function escapeHtml(s) {
+    if (!s && s !== 0) return '';
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+}
+
+function escapeAttr(s) {
+    if (!s && s !== 0) return '';
+    return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// Close modals on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (!document.getElementById('companyModal').classList.contains('hidden')) closeCompanyModal();
+        if (!document.getElementById('viewModal').classList.contains('hidden')) closeViewModal();
     }
 });
 </script>
