@@ -4,15 +4,14 @@
 
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Send Application</h1>
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Send Application</h1>
 
-    <div class="bg-white shadow rounded-lg p-6 max-w-3xl mx-auto">
-        <form id="sendForm" class="space-y-6">
-            <!-- Email Addresses -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Email Addresses <span class="text-red-500">*</span>
-                </label>
+    <div class="bg-white shadow-lg rounded-xl p-6 max-w-3xl mx-auto">
+        <form id="sendForm" class="space-y-6" novalidate>
+
+            <!-- Emails -->
+            <section id="emailsSection" aria-labelledby="emailsHeading">
+                <h2 id="emailsHeading" class="text-sm font-medium text-gray-700 mb-2">Email Addresses <span class="text-red-500">*</span></h2>
                 <div class="relative">
                     <div class="absolute top-3 left-3 pointer-events-none">
                         <i class="fas fa-envelope text-gray-400"></i>
@@ -21,22 +20,21 @@
                         name="emails"
                         rows="3"
                         required
-                        placeholder="hr@tesla.com&#10;jobs@microsoft.com&#10;careers@apple.com"
-                        class="form-input pl-10 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        aria-required="true"
+                        placeholder="hr@tesla.com\njobs@microsoft.com\ncareers@apple.com"
+                        class="form-input pl-10 border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all w-full resize-y"
                     >{{ prefill_email or '' }}</textarea>
                 </div>
-                <p class="mt-1 text-xs text-gray-500">
+                <p class="mt-2 text-xs text-gray-500">
                     <i class="fas fa-info-circle text-blue-500"></i>
-                    One per line or comma-separated
+                    One email per line, or comma-separated. We will send one message per address.
                 </p>
-            </div>
+            </section>
 
             <!-- Language -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Language <span class="text-red-500">*</span>
-                </label>
-                <div class="grid grid-cols-3 gap-3">
+            <section aria-labelledby="languageHeading">
+                <h2 id="languageHeading" class="text-sm font-medium text-gray-700 mb-3">Language <span class="text-red-500">*</span></h2>
+                <fieldset class="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Language selection">
                     <label class="relative cursor-pointer">
                         <input type="radio" name="language" value="en"
                                {% if default_language == 'en' %}checked{% endif %}
@@ -72,290 +70,277 @@
                                 <i class="fas fa-flag text-purple-500"></i>
                             </div>
                             <p class="font-semibold text-gray-900">Both</p>
-                            <p class="text-xs text-gray-500 mt-1">2 emails each</p>
+                            <p class="text-xs text-gray-500 mt-1">Send 2 emails (EN & FR)</p>
                         </div>
                     </label>
-                </div>
-            </div>
+                </fieldset>
+                <p class="mt-2 text-xs text-gray-500">Selecting <strong>Both</strong> will reveal separate fields for English and French content and attachments.</p>
+            </section>
 
             <!-- Company -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Company Name
-                </label>
+            <section aria-labelledby="companyHeading">
+                <h3 id="companyHeading" class="sr-only">Company</h3>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
                 <input
                     type="text"
                     name="company"
                     placeholder="Leave blank for default"
                     value="{{ prefill_company or '' }}"
-                    class="form-input"
+                    class="form-input w-full border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                 />
-            </div>
+            </section>
 
-            <!-- Position - Single field for en or fr -->
-            <div id="positionSingle">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Position
-                </label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-briefcase text-gray-400"></i>
-                    </div>
-                    <input
-                        type="text"
-                        name="position"
-                        id="positionSingleInput"
-                        value="{{ prefill_position or default_position_en }}"
-                        placeholder="Software Engineer, Data Analyst, etc."
-                        class="form-input pl-10 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                    />
-                </div>
-            </div>
+            <!-- Position: Single or Dual -->
+            <section aria-labelledby="positionHeading">
+                <h3 id="positionHeading" class="text-sm font-medium text-gray-700 mb-2">Position</h3>
 
-            <!-- Position - Dual fields for both -->
-            <div id="positionDual" class="hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Position <span class="text-red-500">*</span>
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
-                        <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
-                            <i class="fas fa-flag-usa mr-2"></i>English
-                        </label>
+                <div id="positionSingle">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-briefcase text-gray-400"></i>
+                        </div>
                         <input
                             type="text"
-                            name="position_en"
-                            id="positionEnInput"
-                            value="{{ prefill_position_en or default_position_en }}"
-                            required
-                            class="form-input"
-                            placeholder="Instrumentation Engineer"
-                        />
-                    </div>
-                    <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
-                        <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
-                            <i class="fas fa-flag mr-2"></i>French
-                        </label>
-                        <input
-                            type="text"
-                            name="position_fr"
-                            id="positionFrInput"
-                            value="{{ prefill_position_fr or default_position_fr }}"
-                            required
-                            class="form-input"
-                            placeholder="Ingénieur en Instrumentation"
+                            name="position"
+                            id="positionSingleInput"
+                            value="{{ prefill_position or default_position_en }}"
+                            placeholder="Software Engineer, Data Analyst, etc."
+                            class="form-input pl-10 border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all w-full"
                         />
                     </div>
                 </div>
-            </div>
 
-            <!-- Attachment - Single selector -->
-            <div id="attachmentSingle">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Attachment (CV) <span class="text-red-500">*</span>
-                </label>
-                <select name="attachment" required class="form-input" id="attachmentSelect">
-                    {% for att in attachments_en %}
-                    <option value="{{ att }}"
-                        {% if prefill_attachment and att == prefill_attachment %}selected
-                        {% elif not prefill_attachment and loop.first %}selected{% endif %}
-                    >{{ att }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Attachment - Dual selectors for both -->
-            <div id="attachmentDual" class="hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Attachments (CV) <span class="text-red-500">*</span>
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
-                        <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
-                            <i class="fas fa-flag-usa mr-2"></i>English CV
-                        </label>
-                        <select name="attachment_en" required class="form-input" id="attachmentEnSelect">
-                            {% for att in attachments_en %}
-                            <option value="{{ att }}"
-                                {% if prefill_attachment_en and att == prefill_attachment_en %}selected
-                                {% elif not prefill_attachment_en and loop.first %}selected{% endif %}
-                            >{{ att }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
-                        <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
-                            <i class="fas fa-flag mr-2"></i>French CV
-                        </label>
-                        <select name="attachment_fr" required class="form-input" id="attachmentFrSelect">
-                            {% for att in attachments_fr %}
-                            <option value="{{ att }}"
-                                {% if prefill_attachment_fr and att == prefill_attachment_fr %}selected
-                                {% elif not prefill_attachment_fr and loop.first %}selected{% endif %}
-                            >{{ att }}</option>
-                            {% endfor %}
-                        </select>
+                <div id="positionDual" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                            <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
+                                <i class="fas fa-flag-usa mr-2"></i>English
+                            </label>
+                            <input
+                                type="text"
+                                name="position_en"
+                                id="positionEnInput"
+                                value="{{ prefill_position_en or default_position_en }}"
+                                required
+                                class="form-input w-full"
+                                placeholder="Instrumentation Engineer"
+                            />
+                        </div>
+                        <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
+                            <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
+                                <i class="fas fa-flag mr-2"></i>French
+                            </label>
+                            <input
+                                type="text"
+                                name="position_fr"
+                                id="positionFrInput"
+                                value="{{ prefill_position_fr or default_position_fr }}"
+                                required
+                                class="form-input w-full"
+                                placeholder="Ingénieur en Instrumentation"
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Body - Single field -->
-            <div id="bodySingle">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Email Body
-                </label>
-                <textarea
-                    name="body"
-                    id="bodySingleInput"
-                    rows="8"
-                    class="form-input"
-                >{{ prefill_body or default_body_en }}</textarea>
-                <p class="mt-1 text-sm text-gray-500">
-                    Placeholders: [Company], [Position]
-                </p>
-            </div>
+            <!-- Attachment: Single or Dual -->
+            <section aria-labelledby="attachmentHeading">
+                <h3 id="attachmentHeading" class="text-sm font-medium text-gray-700 mb-2">Attachment (CV)</h3>
 
-            <!-- Body - Dual fields -->
-            <div id="bodyDual" class="hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Email Body <span class="text-red-500">*</span>
-                </label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
-                        <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
-                            <i class="fas fa-flag-usa mr-2"></i>English Body
-                        </label>
-                        <textarea
-                            name="body_en"
-                            id="bodyEnInput"
-                            rows="10"
-                            required
-                            class="form-input"
-                            placeholder="Dear Hiring Manager..."
-                        >{{ prefill_body_en or default_body_en }}</textarea>
-                    </div>
-                    <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
-                        <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
-                            <i class="fas fa-flag mr-2"></i>French Body
-                        </label>
-                        <textarea
-                            name="body_fr"
-                            id="bodyFrInput"
-                            rows="10"
-                            required
-                            class="form-input"
-                            placeholder="Madame, Monsieur..."
-                        >{{ prefill_body_fr or default_body_fr }}</textarea>
+                <div id="attachmentSingle">
+                    <select name="attachment" required class="form-input w-full" id="attachmentSelect" aria-required="true">
+                        {% for att in attachments_en %}
+                        <option value="{{ att }}"
+                            {% if prefill_attachment and att == prefill_attachment %}selected
+                            {% elif not prefill_attachment and loop.first %}selected{% endif %}
+                        >{{ att }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="attachmentDual" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                            <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
+                                <i class="fas fa-flag-usa mr-2"></i>English CV
+                            </label>
+                            <select name="attachment_en" required class="form-input w-full" id="attachmentEnSelect">
+                                {% for att in attachments_en %}
+                                <option value="{{ att }}"
+                                    {% if prefill_attachment_en and att == prefill_attachment_en %}selected
+                                    {% elif not prefill_attachment_en and loop.first %}selected{% endif %}
+                                >{{ att }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
+                            <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
+                                <i class="fas fa-flag mr-2"></i>French CV
+                            </label>
+                            <select name="attachment_fr" required class="form-input w-full" id="attachmentFrSelect">
+                                {% for att in attachments_fr %}
+                                <option value="{{ att }}"
+                                    {% if prefill_attachment_fr and att == prefill_attachment_fr %}selected
+                                    {% elif not prefill_attachment_fr and loop.first %}selected{% endif %}
+                                >{{ att }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <p class="mt-2 text-sm text-gray-500">
-                    <i class="fas fa-info-circle text-blue-500"></i>
-                    Placeholders: <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code> and <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code>
-                </p>
-            </div>
+            </section>
+
+            <!-- Email Body -->
+            <section aria-labelledby="bodyHeading">
+                <h3 id="bodyHeading" class="text-sm font-medium text-gray-700 mb-2">Email Body</h3>
+
+                <div id="bodySingle">
+                    <textarea
+                        name="body"
+                        id="bodySingleInput"
+                        rows="8"
+                        class="form-input w-full border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    >{{ prefill_body or default_body_en }}</textarea>
+                    <p class="mt-1 text-sm text-gray-500">Placeholders: <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code>, <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code></p>
+                </div>
+
+                <div id="bodyDual" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border border-gray-300 rounded-lg p-3 bg-blue-50">
+                            <label class="block text-xs font-semibold text-blue-700 mb-2 flex items-center">
+                                <i class="fas fa-flag-usa mr-2"></i>English Body
+                            </label>
+                            <textarea
+                                name="body_en"
+                                id="bodyEnInput"
+                                rows="10"
+                                required
+                                class="form-input w-full"
+                                placeholder="Dear Hiring Manager..."
+                            >{{ prefill_body_en or default_body_en }}</textarea>
+                        </div>
+                        <div class="border border-gray-300 rounded-lg p-3 bg-purple-50">
+                            <label class="block text-xs font-semibold text-purple-700 mb-2 flex items-center">
+                                <i class="fas fa-flag mr-2"></i>French Body
+                            </label>
+                            <textarea
+                                name="body_fr"
+                                id="bodyFrInput"
+                                rows="10"
+                                required
+                                class="form-input w-full"
+                                placeholder="Madame, Monsieur..."
+                            >{{ prefill_body_fr or default_body_fr }}</textarea>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500"><i class="fas fa-info-circle text-blue-500"></i> Placeholders: <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code> and <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code></p>
+                </div>
+            </section>
 
             <!-- Additional Fields (Collapsible) -->
-<div class="border-t pt-4">
-    <button
-        type="button"
-        onclick="toggleAdditional()"
-        class="text-sm font-medium text-gray-700 hover:text-gray-900"
-    >
-        <i class="fas fa-plus-circle mr-1"></i> Additional Information (Optional)
-    </button>
+            <div class="border-t pt-4">
+                <button
+                    type="button"
+                    onclick="toggleAdditional()"
+                    class="text-sm font-medium text-gray-700 hover:text-gray-900"
+                    aria-expanded="false"
+                    id="toggleAdditionalBtn"
+                >
+                    <i class="fas fa-plus-circle mr-1"></i> Additional Information (Optional)
+                </button>
 
-    <div id="additionalFields" class="hidden mt-4 space-y-6">
+                <div id="additionalFields" class="hidden mt-4 space-y-6" aria-hidden="true">
 
-        <!-- Row 1: Company Type + Website -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
-    <select name="company_type" class="form-input" required>
-        <option value="Oil & Gas" {% if prefill_company_type == 'Oil & Gas' %}selected{% endif %}>Oil & Gas</option>
-        <option value="Petrochemical" {% if prefill_company_type == 'Petrochemical' %}selected{% endif %}>Petrochemical</option>
-        <option value="Power & Energy" {% if prefill_company_type == 'Power & Energy' %}selected{% endif %}>Power & Energy</option>
-        <option value="Manufacturing / Industrial Plants" {% if prefill_company_type == 'Manufacturing / Industrial Plants' %}selected{% endif %}>Manufacturing / Industrial Plants</option>
-        <option value="Food Processing / Food Industry" {% if prefill_company_type == 'Food Processing / Food Industry' %}selected{% endif %}>Food Processing / Food Industry</option>
-        <option value="Consumer Goods" {% if prefill_company_type == 'Consumer Goods' %}selected{% endif %}>Consumer Goods</option>
-    </select>
+                    <!-- Row 1: Company Type + Website -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
+                            <select name="company_type" class="form-input w-full" required>
+                                <option value="Oil & Gas" {% if prefill_company_type == 'Oil & Gas' %}selected{% endif %}>Oil & Gas</option>
+                                <option value="Petrochemical" {% if prefill_company_type == 'Petrochemical' %}selected{% endif %}>Petrochemical</option>
+                                <option value="Power & Energy" {% if prefill_company_type == 'Power & Energy' %}selected{% endif %}>Power & Energy</option>
+                                <option value="Manufacturing / Industrial Plants" {% if prefill_company_type == 'Manufacturing / Industrial Plants' %}selected{% endif %}>Manufacturing / Industrial Plants</option>
+                                <option value="Food Processing / Food Industry" {% if prefill_company_type == 'Food Processing / Food Industry' %}selected{% endif %}>Food Processing / Food Industry</option>
+                                <option value="Consumer Goods" {% if prefill_company_type == 'Consumer Goods' %}selected{% endif %}>Consumer Goods</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                            <input
+                                type="url"
+                                name="website"
+                                placeholder="https://company.com"
+                                value="{{ prefill_website or '' }}"
+                                class="form-input w-full"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Phone Number + Location -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                placeholder="+213 5xx xxx xxx"
+                                value="{{ prefill_phone or '' }}"
+                                class="form-input w-full"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Location / Place</label>
+                            <input
+                                type="text"
+                                name="place"
+                                placeholder="City, Country or Industrial Site"
+                                value="{{ prefill_place or '' }}"
+                                class="form-input w-full"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Reference Link + Salary -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Reference Link</label>
+                            <input
+                                type="url"
+                                name="reference_link"
+                                placeholder="https://job-posting-link.com"
+                                value="{{ prefill_reference_link or '' }}"
+                                class="form-input w-full"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
+                            <input
+                                type="text"
+                                name="salary"
+                                placeholder="e.g. 80,000 – 120,000 DZD / month"
+                                value="{{ prefill_salary or '' }}"
+                                class="form-input w-full"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                        <textarea
+                            name="notes"
+                            rows="3"
+                            placeholder="Interview notes, recruiter name, internal remarks..."
+                            class="form-input w-full"
+                        >{{ prefill_notes or '' }}</textarea>
+                    </div>
+
+                </div>
             </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                <input
-                    type="url"
-                    name="website"
-                    placeholder="https://company.com"
-                    value="{{ prefill_website or '' }}"
-                    class="form-input"
-                />
-            </div>
-        </div>
-
-        <!-- Row 2: Phone Number + Location -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                    type="tel"
-                    name="phone"
-                    placeholder="+213 5xx xxx xxx"
-                    value="{{ prefill_phone or '' }}"
-                    class="form-input"
-                />
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Location / Place</label>
-                <input
-                    type="text"
-                    name="place"
-                    placeholder="City, Country or Industrial Site"
-                    value="{{ prefill_place or '' }}"
-                    class="form-input"
-                />
-            </div>
-        </div>
-
-        <!-- Row 3: Reference Link + Salary -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Reference Link</label>
-                <input
-                    type="url"
-                    name="reference_link"
-                    placeholder="https://job-posting-link.com"
-                    value="{{ prefill_reference_link or '' }}"
-                    class="form-input"
-                />
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
-                <input
-                    type="text"
-                    name="salary"
-                    placeholder="e.g. 80,000 – 120,000 DZD / month"
-                    value="{{ prefill_salary or '' }}"
-                    class="form-input"
-                />
-            </div>
-        </div>
-
-        <!-- Notes -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-            <textarea
-                name="notes"
-                rows="3"
-                placeholder="Interview notes, recruiter name, internal remarks..."
-                class="form-input"
-            >{{ prefill_notes or '' }}</textarea>
-        </div>
-
-    </div>
-</div>
-
 
             <!-- Submit Buttons -->
             <div class="flex justify-end space-x-3 pt-4">
@@ -369,7 +354,7 @@
         </form>
 
         <!-- Results Display -->
-        <div id="results" class="hidden mt-6"></div>
+        <div id="results" class="hidden mt-6" role="status" aria-live="polite"></div>
     </div>
 </div>
 
@@ -467,7 +452,11 @@ function updateAttachmentSelect(language, selectId) {
 
 function toggleAdditional() {
     const fields = document.getElementById('additionalFields');
+    const btn = document.getElementById('toggleAdditionalBtn');
+    const expanded = !fields.classList.contains('hidden');
     fields.classList.toggle('hidden');
+    fields.setAttribute('aria-hidden', String(expanded));
+    btn.setAttribute('aria-expanded', String(!expanded));
 }
 
 // Form submission
