@@ -57,7 +57,7 @@
                 <!-- Action Buttons -->
                 <div class="flex items-center space-x-2">
                     {% if company.email %}
-                    <a href="/send?company={{ company.name }}&email={{ company.email }}"
+                    <a href="/send?company={{ company.name|urlencode }}&email={{ company.email|urlencode }}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}"
                        class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all">
                         <i class="fas fa-paper-plane mr-2"></i>Send Application
                     </a>

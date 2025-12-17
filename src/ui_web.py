@@ -179,7 +179,15 @@ async def home(request: Request):
 
 
 @app.get("/send", response_class=HTMLResponse)
-async def send_page(request: Request, template: Optional[str] = None):
+async def send_page(
+    request: Request,
+    template: Optional[str] = None,
+    company: Optional[str] = None,
+    email: Optional[str] = None,
+    phone: Optional[str] = None,
+    website: Optional[str] = None,
+    company_type: Optional[str] = None
+):
     _, _, attachment_selector = get_clients()
     template_manager = get_template_manager()
 
@@ -231,6 +239,33 @@ async def send_page(request: Request, template: Optional[str] = None):
     default_position_en = template_position_en or get_default_position('en')
     default_position_fr = template_position_fr or get_default_position('fr')
 
+    # --- Prefill from query params (company detail link passes these) ---
+    # Use request.query_params for optional extras (attachment, position, bodies, etc.)
+    query = request.query_params
+
+    prefill_email = email or query.get('emails') or ''
+    prefill_company = company or query.get('company') or ''
+    prefill_phone = phone or query.get('phone') or ''
+    prefill_website = website or query.get('website') or ''
+    prefill_company_type = company_type or query.get('company_type') or ''
+
+    prefill_attachment = query.get('attachment')  # single attachment name
+    prefill_attachment_en = query.get('attachment_en')
+    prefill_attachment_fr = query.get('attachment_fr')
+
+    prefill_position = query.get('position') or ''
+    prefill_position_en = query.get('position_en') or template_position_en or ''
+    prefill_position_fr = query.get('position_fr') or template_position_fr or ''
+
+    prefill_body = query.get('body') or ''
+    prefill_body_en = query.get('body_en') or template_body_en or ''
+    prefill_body_fr = query.get('body_fr') or template_body_fr or ''
+
+    prefill_place = query.get('place') or ''
+    prefill_salary = query.get('salary') or ''
+    prefill_reference_link = query.get('reference_link') or ''
+    prefill_notes = query.get('notes') or ''
+
     return templates.TemplateResponse(
         "send.html",
         {
@@ -241,10 +276,28 @@ async def send_page(request: Request, template: Optional[str] = None):
             "default_body_fr": default_body_fr,
             "default_position_en": default_position_en,
             "default_position_fr": default_position_fr,
-            "default_language": template_language if template else default_language
+            "default_language": template_language if template else default_language,
+            # Prefill values for the form
+            "prefill_email": prefill_email,
+            "prefill_company": prefill_company,
+            "prefill_phone": prefill_phone,
+            "prefill_website": prefill_website,
+            "prefill_company_type": prefill_company_type,
+            "prefill_attachment": prefill_attachment,
+            "prefill_attachment_en": prefill_attachment_en,
+            "prefill_attachment_fr": prefill_attachment_fr,
+            "prefill_position": prefill_position,
+            "prefill_position_en": prefill_position_en,
+            "prefill_position_fr": prefill_position_fr,
+            "prefill_body": prefill_body,
+            "prefill_body_en": prefill_body_en,
+            "prefill_body_fr": prefill_body_fr,
+            "prefill_place": prefill_place,
+            "prefill_salary": prefill_salary,
+            "prefill_reference_link": prefill_reference_link,
+            "prefill_notes": prefill_notes
         }
     )
-
 
 @app.post("/send")
 async def send_application(
