@@ -1,3 +1,4 @@
+# src/ui_web.py
 from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,7 +21,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from settings_manager import settings_manager
 
 from src.auth import get_authenticated_services
-from src.sheets import SheetsClient
+from src.sheets import SheetsClient, SHEET_COMPANIES, COMPANY_COLUMNS
 from src.mailer import GmailMailer
 from src.attachments import AttachmentSelector
 from src.followup import FollowupEngine
@@ -262,10 +263,10 @@ async def send_application(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         notes: Optional[str] = Form(None),
-company_type: Optional[str] = Form(None),
-    salary: Optional[str] = Form(None),
-    place: Optional[str] = Form(None),
-    reference_link: Optional[str] = Form(None)
+        company_type: Optional[str] = Form(None),
+        salary: Optional[str] = Form(None),
+        place: Optional[str] = Form(None),
+        reference_link: Optional[str] = Form(None)
 ):
     sheets_client, mailer, attachment_selector = get_clients()
 
@@ -596,6 +597,308 @@ async def create_template(
         )
 
 
+@app.post("/api/settings/export")
+async def export_data():
+    sheets_client, _, _ = get_clients()
+
+    try:
+        apps_en = sheets_client.get_applications_for_followup('en')
+        apps_fr = sheets_client.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
+
+        # Create CSV
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=all_apps[0].keys() if all_apps else [])
+        writer.writeheader()
+        writer.writerows(all_apps)
+
+        csv_content = output.getvalue()
+
+        return JSONResponse(content={
+            'success': True,
+            'data': csv_content,
+            'filename': f'applications_export_{datetime.now().strftime("%Y%m%d")}.csv'
+        })
+    except Exception as e:
+        return JSONResponse(content={'success': False, 'error': str(e)})
+
+
+@app.post("/api/settings/clear")
+async def clear_data():
+    # This is a dangerous operation - require confirmation
+    return JSONResponse(content={'success': False, 'error': 'Not implemented for safety'})
+
+
+@app.get("/api/attachments/{language}")
+async def get_attachments(language: str):
+    _, _, attachment_selector = get_clients()
+
+    attachments = [
+        {
+            'name': f.name,
+            'size': f.stat().st_size,
+            'modified': f.stat().st_mtime
+        }
+        for f in attachment_selector.get_attachments(language)
+    ]
+
+    return JSONResponse(content={'attachments': attachments})
+
+
+@app.post("/api/upload-attachment")
+async def upload_attachment(
+        language: str = Form(...),
+        file: UploadFile = File(...)
+):
+    folder = ATTACHMENT_FOLDER_EN if language == 'en' else ATTACHMENT_FOLDER_FR
+    folder.mkdir(parents=True, exist_ok=True)
+
+    file_path = folder / file.filename
+
+    with open(file_path, 'wb') as f:
+        content = await file.read()
+        f.write(content)
+
+    return JSONResponse(content={
+        'success': True,
+        'filename': file.filename,
+        'message': f'Uploaded to {language} folder'
+    })
+
+
+@app.post("/api/companies/initialize")
+async def initialize_companies_sheet():
+    """Initialize the Companies sheet with proper headers."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        # Initialize just the Companies sheet
+        sheets_client._ensure_headers(SHEET_COMPANIES, COMPANY_COLUMNS)
+
+        return JSONResponse(content={
+            'success': True,
+            'message': 'Companies sheet initialized successfully'
+        })
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.get("/companies", response_class=HTMLResponse)
+async def companies_page(request: Request):
+    """Companies management page."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        # Auto-initialize sheets (safe, idempotent)
+        try:
+            sheets_client.initialize_sheets()
+        except Exception as e:
+            # Non-fatal: log and continue
+            print(f"Warning: failed to auto-initialize sheets: {e}")
+
+        companies = sheets_client.get_all_companies()
+
+        # Calculate recent count (this month)
+        timezone = settings_manager.get_setting('timezone', 'UTC')
+        tz = pytz.timezone(timezone)
+        now = datetime.now(tz)
+        first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        recent_count = sum(
+            1 for company in companies
+            if company.get('added_date') and
+            datetime.fromisoformat(company['added_date']) >= first_day_of_month
+        )
+
+    except Exception as e:
+        print(f"Companies page error: {e}")
+        # Return empty state instead of crashing
+        companies = []
+        recent_count = 0
+
+    return templates.TemplateResponse(
+        "companies.html",
+        {
+            "request": request,
+            "companies": companies,
+            "recent_count": recent_count
+        }
+    )
+
+
+@app.post("/api/companies")
+async def create_company(
+        name: str = Form(...),
+        type: Optional[str] = Form(None),
+        email: Optional[str] = Form(None),
+        phone: Optional[str] = Form(None),
+        website: Optional[str] = Form(None),
+        location: Optional[str] = Form(None),
+        notes: Optional[str] = Form(None)
+):
+    """Create a new company and return the created company object."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        company_id = sheets_client.add_company(
+            company_name=name,
+            company_type=type,
+            email=email,
+            phone=phone,
+            website=website,
+            location=location,
+            notes=notes
+        )
+
+        # Read back the created company so frontend can update without reload
+        created = sheets_client.get_company_by_id(company_id)
+
+        return JSONResponse(content={
+            'success': True,
+            'company_id': company_id,
+            'company': created,
+            'message': 'Company added successfully'
+        })
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.get("/api/companies/{company_id}")
+async def get_company(company_id: str):
+    """Get a specific company by ID."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        company = sheets_client.get_company_by_id(company_id)
+
+        if company:
+            return JSONResponse(content={
+                'success': True,
+                'company': company
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Company not found'},
+                status_code=404
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.put("/api/companies/{company_id}")
+async def update_company(
+        company_id: str,
+        name: str = Form(...),
+        type: Optional[str] = Form(None),
+        email: Optional[str] = Form(None),
+        phone: Optional[str] = Form(None),
+        website: Optional[str] = Form(None),
+        location: Optional[str] = Form(None),
+        notes: Optional[str] = Form(None)
+):
+    """Update an existing company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        success = sheets_client.update_company(
+            company_id=company_id,
+            company_name=name,
+            company_type=type,
+            email=email,
+            phone=phone,
+            website=website,
+            location=location,
+            notes=notes
+        )
+
+        if success:
+            return JSONResponse(content={
+                'success': True,
+                'message': 'Company updated successfully'
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Company not found'},
+                status_code=404
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.delete("/api/companies/{company_id}")
+async def delete_company(company_id: str):
+    """Delete a company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        success = sheets_client.delete_company(company_id)
+
+        if success:
+            return JSONResponse(content={
+                'success': True,
+                'message': 'Company deleted successfully'
+            })
+        else:
+            return JSONResponse(
+                content={'success': False, 'error': 'Company not found'},
+                status_code=404
+            )
+    except Exception as e:
+        return JSONResponse(
+            content={'success': False, 'error': str(e)},
+            status_code=500
+        )
+
+
+@app.get("/companies/{company_id}", response_class=HTMLResponse)
+async def company_detail_page(request: Request, company_id: str):
+    """View detailed information about a specific company."""
+    sheets_client, _, _ = get_clients()
+
+    try:
+        company = sheets_client.get_company_by_id(company_id)
+
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+
+        # Get applications for this company (both EN and FR)
+        apps_en = sheets_client.get_applications_for_followup('en')
+        apps_fr = sheets_client.get_applications_for_followup('fr')
+        all_apps = apps_en + apps_fr
+
+        # Filter applications for this company
+        company_apps = [
+            app for app in all_apps
+            if app.get('company', '').lower() == company['name'].lower()
+        ]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return templates.TemplateResponse(
+        "company_detail.html",
+        {
+            "request": request,
+            "company": company,
+            "applications": company_apps
+        }
+    )
+
+
 @app.get("/monitoring", response_class=HTMLResponse)
 async def monitoring_page(request: Request):
     sheets_client, mailer, _ = get_clients()
@@ -789,325 +1092,6 @@ async def delete_application(app_id: str, language: str = Form(...)):
             status_code=500
         )
 
-
-@app.get("/settings", response_class=HTMLResponse)
-async def settings_page(request: Request):
-    settings = settings_manager.get_all_settings()
-
-    return templates.TemplateResponse(
-        "settings.html",
-        {
-            "request": request,
-            "settings": settings
-        }
-    )
-
-
-@app.post("/api/settings/save")
-async def save_settings(
-        default_language: str = Form(...),
-        followup_days: int = Form(...),
-        timezone: str = Form(...),
-        email_delay: int = Form(...),
-        max_retries: int = Form(...),
-        auto_followup: bool = Form(False)
-):
-    """Save settings."""
-    try:
-        success = settings_manager.update_settings({
-            'default_language': default_language,
-            'followup_days': followup_days,
-            'timezone': timezone,
-            'email_delay': email_delay,
-            'max_retries': max_retries,
-            'auto_followup': auto_followup
-        })
-
-        if success:
-            return JSONResponse(content={
-                'success': True,
-                'message': 'Settings saved successfully'
-            })
-        else:
-            return JSONResponse(
-                content={'success': False, 'error': 'Failed to save settings'},
-                status_code=500
-            )
-    except Exception as e:
-        return JSONResponse(
-            content={'success': False, 'error': str(e)},
-            status_code=500
-        )
-
-
-@app.post("/api/settings/export")
-async def export_data():
-    sheets_client, _, _ = get_clients()
-
-    try:
-        apps_en = sheets_client.get_applications_for_followup('en')
-        apps_fr = sheets_client.get_applications_for_followup('fr')
-        all_apps = apps_en + apps_fr
-
-        # Create CSV
-        output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=all_apps[0].keys() if all_apps else [])
-        writer.writeheader()
-        writer.writerows(all_apps)
-
-        csv_content = output.getvalue()
-
-        return JSONResponse(content={
-            'success': True,
-            'data': csv_content,
-            'filename': f'applications_export_{datetime.now().strftime("%Y%m%d")}.csv'
-        })
-    except Exception as e:
-        return JSONResponse(content={'success': False, 'error': str(e)})
-
-
-@app.post("/api/settings/clear")
-async def clear_data():
-    # This is a dangerous operation - require confirmation
-    return JSONResponse(content={'success': False, 'error': 'Not implemented for safety'})
-
-
-@app.get("/api/attachments/{language}")
-async def get_attachments(language: str):
-    _, _, attachment_selector = get_clients()
-
-    attachments = [
-        {
-            'name': f.name,
-            'size': f.stat().st_size,
-            'modified': f.stat().st_mtime
-        }
-        for f in attachment_selector.get_attachments(language)
-    ]
-
-    return JSONResponse(content={'attachments': attachments})
-
-
-@app.post("/api/upload-attachment")
-async def upload_attachment(
-        language: str = Form(...),
-        file: UploadFile = File(...)
-):
-    folder = ATTACHMENT_FOLDER_EN if language == 'en' else ATTACHMENT_FOLDER_FR
-    folder.mkdir(parents=True, exist_ok=True)
-
-    file_path = folder / file.filename
-
-    with open(file_path, 'wb') as f:
-        content = await file.read()
-        f.write(content)
-
-    return JSONResponse(content={
-        'success': True,
-        'filename': file.filename,
-        'message': f'Uploaded to {language} folder'
-    })
-
-
-@app.get("/companies", response_class=HTMLResponse)
-async def companies_page(request: Request):
-    """Companies management page."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        companies = sheets_client.get_all_companies()
-
-        # Calculate recent count (this month)
-        timezone = settings_manager.get_setting('timezone', 'UTC')
-        tz = pytz.timezone(timezone)
-        now = datetime.now(tz)
-        first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-        recent_count = sum(
-            1 for company in companies
-            if company.get('added_date') and
-            datetime.fromisoformat(company['added_date']) >= first_day_of_month
-        )
-
-    except Exception as e:
-        print(f"Companies page error: {e}")
-        companies = []
-        recent_count = 0
-
-    return templates.TemplateResponse(
-        "companies.html",
-        {
-            "request": request,
-            "companies": companies,
-            "recent_count": recent_count
-        }
-    )
-
-
-@app.post("/api/companies")
-async def create_company(
-        name: str = Form(...),
-        type: Optional[str] = Form(None),
-        email: Optional[str] = Form(None),
-        phone: Optional[str] = Form(None),
-        website: Optional[str] = Form(None),
-        location: Optional[str] = Form(None),
-        notes: Optional[str] = Form(None)
-):
-    """Create a new company."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        company_id = sheets_client.add_company(
-            company_name=name,
-            company_type=type,
-            email=email,
-            phone=phone,
-            website=website,
-            location=location,
-            notes=notes
-        )
-
-        return JSONResponse(content={
-            'success': True,
-            'company_id': company_id,
-            'message': 'Company added successfully'
-        })
-    except Exception as e:
-        return JSONResponse(
-            content={'success': False, 'error': str(e)},
-            status_code=500
-        )
-
-
-@app.get("/api/companies/{company_id}")
-async def get_company(company_id: str):
-    """Get a specific company by ID."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        company = sheets_client.get_company_by_id(company_id)
-
-        if company:
-            return JSONResponse(content={
-                'success': True,
-                'company': company
-            })
-        else:
-            return JSONResponse(
-                content={'success': False, 'error': 'Company not found'},
-                status_code=404
-            )
-    except Exception as e:
-        return JSONResponse(
-            content={'success': False, 'error': str(e)},
-            status_code=500
-        )
-
-
-@app.put("/api/companies/{company_id}")
-async def update_company(
-        company_id: str,
-        name: str = Form(...),
-        type: Optional[str] = Form(None),
-        email: Optional[str] = Form(None),
-        phone: Optional[str] = Form(None),
-        website: Optional[str] = Form(None),
-        location: Optional[str] = Form(None),
-        notes: Optional[str] = Form(None)
-):
-    """Update an existing company."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        success = sheets_client.update_company(
-            company_id=company_id,
-            company_name=name,
-            company_type=type,
-            email=email,
-            phone=phone,
-            website=website,
-            location=location,
-            notes=notes
-        )
-
-        if success:
-            return JSONResponse(content={
-                'success': True,
-                'message': 'Company updated successfully'
-            })
-        else:
-            return JSONResponse(
-                content={'success': False, 'error': 'Company not found'},
-                status_code=404
-            )
-    except Exception as e:
-        return JSONResponse(
-            content={'success': False, 'error': str(e)},
-            status_code=500
-        )
-
-
-@app.delete("/api/companies/{company_id}")
-async def delete_company(company_id: str):
-    """Delete a company."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        success = sheets_client.delete_company(company_id)
-
-        if success:
-            return JSONResponse(content={
-                'success': True,
-                'message': 'Company deleted successfully'
-            })
-        else:
-            return JSONResponse(
-                content={'success': False, 'error': 'Company not found'},
-                status_code=404
-            )
-    except Exception as e:
-        return JSONResponse(
-            content={'success': False, 'error': str(e)},
-            status_code=500
-        )
-
-
-@app.get("/companies/{company_id}", response_class=HTMLResponse)
-async def company_detail_page(request: Request, company_id: str):
-    """View detailed information about a specific company."""
-    sheets_client, _, _ = get_clients()
-
-    try:
-        company = sheets_client.get_company_by_id(company_id)
-
-        if not company:
-            raise HTTPException(status_code=404, detail="Company not found")
-
-        # Get applications for this company (both EN and FR)
-        apps_en = sheets_client.get_applications_for_followup('en')
-        apps_fr = sheets_client.get_applications_for_followup('fr')
-        all_apps = apps_en + apps_fr
-
-        # Filter applications for this company
-        company_apps = [
-            app for app in all_apps
-            if app.get('company', '').lower() == company['name'].lower()
-        ]
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return templates.TemplateResponse(
-        "company_detail.html",
-        {
-            "request": request,
-            "company": company,
-            "applications": company_apps
-        }
-    )
 
 @app.get("/health")
 async def health_check():

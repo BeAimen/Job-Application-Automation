@@ -18,21 +18,37 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="stat-card-minimal">
             <p class="text-sm text-gray-600">Total Companies</p>
-            <p class="text-3xl font-bold text-gray-900">{{ companies|length }}</p>
+            <p id="totalCompanies" class="text-3xl font-bold text-gray-900">{{ companies|length }}</p>
         </div>
         <div class="stat-card-minimal">
             <p class="text-sm text-gray-600">With Email</p>
-            <p class="text-3xl font-bold text-green-600">{{ companies|selectattr('email')|list|length }}</p>
+            <p id="withEmailCount" class="text-3xl font-bold text-green-600">{{ companies|selectattr('email')|list|length }}</p>
         </div>
         <div class="stat-card-minimal">
             <p class="text-sm text-gray-600">Without Email</p>
-            <p class="text-3xl font-bold text-yellow-600">{{ (companies|length) - (companies|selectattr('email')|list|length) }}</p>
+            <p id="withoutEmailCount" class="text-3xl font-bold text-yellow-600">{{ (companies|length) - (companies|selectattr('email')|list|length) }}</p>
         </div>
         <div class="stat-card-minimal">
             <p class="text-sm text-gray-600">Added This Month</p>
-            <p class="text-3xl font-bold text-blue-600">{{ recent_count }}</p>
+            <p id="addedThisMonth" class="text-3xl font-bold text-blue-600">{{ recent_count }}</p>
         </div>
     </div>
+
+    {# Preview first company's emails if any exist #}
+    {% if companies and companies|length > 0 %}
+        {% set first_company = companies[0] %}
+        {% set emails = first_company.email.split(',') if first_company.email else [] %}
+        <!-- Shows first 2 emails, with "+X more" indicator -->
+        {% for email in emails[:2] %}
+        <div class="flex items-center mb-1">
+            <i class="fas fa-envelope text-green-500 mr-2 text-xs"></i>
+            <a href="mailto:{{ email.strip() }}">{{ email.strip() }}</a>
+        </div>
+        {% endfor %}
+        {% if emails|length > 2 %}
+        <div class="text-xs text-gray-500">+{{ emails|length - 2 }} more</div>
+        {% endif %}
+    {% endif %}
 
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4 mb-6">
@@ -46,15 +62,14 @@
             <div class="min-w-[150px]">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Type</label>
                 <select id="typeFilter" class="form-input" onchange="filterCompanies()">
-    <option value="">All Types</option>
-    <option value="oil & gas">Oil & Gas</option>
-    <option value="petrochemical">Petrochemical</option>
-    <option value="power & energy">Power & Energy</option>
-    <option value="manufacturing / industrial plants">Manufacturing / Industrial Plants</option>
-    <option value="food processing / food industry">Food Processing / Food Industry</option>
-    <option value="consumer goods">Consumer Goods</option>
-</select>
-
+                    <option value="">All Types</option>
+                    <option value="oil & gas">Oil & Gas</option>
+                    <option value="petrochemical">Petrochemical</option>
+                    <option value="power & energy">Power & Energy</option>
+                    <option value="manufacturing / industrial plants">Manufacturing / Industrial Plants</option>
+                    <option value="food processing / food industry">Food Processing / Food Industry</option>
+                    <option value="consumer goods">Consumer Goods</option>
+                </select>
             </div>
 
             <div class="min-w-[150px]">
@@ -72,10 +87,19 @@
         </div>
     </div>
 
-    <!-- Companies Table -->
+    <!-- Companies Table + Empty Placeholder -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
-        {% if companies %}
-        <div class="overflow-x-auto">
+        <!-- Empty placeholder -->
+        <div id="noCompaniesPlaceholder" class="text-center py-12" style="{{ 'display:none;' if companies else '' }}">
+            <i class="fas fa-building text-gray-400 text-5xl mb-4"></i>
+            <p class="text-gray-500 text-lg">No companies yet</p>
+            <button onclick="showAddCompanyModal()" class="mt-4 text-blue-600 hover:text-blue-800 font-medium">
+                <i class="fas fa-plus mr-1"></i> Add your first company
+            </button>
+        </div>
+
+        <!-- Table (rendered even when empty) -->
+        <div id="companiesTableWrapper" class="overflow-x-auto" style="{{ '' if companies else 'display:none;' }}">
             <table class="min-w-full divide-y divide-gray-200" id="companiesTable">
                 <thead class="bg-gray-50">
                     <tr>
@@ -87,12 +111,13 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white divide-y divide-gray-200" id="companiesTbody">
                     {% for company in companies %}
                     <tr class="hover:bg-gray-50 company-row"
+                        data-id="{{ company.id }}"
                         data-name="{{ company.name|lower }}"
-                        data-type="{{ company.type|lower }}"
-                        data-location="{{ company.location|lower }}"
+                        data-type="{{ company.type|lower if company.type else '' }}"
+                        data-location="{{ company.location|lower if company.location else '' }}"
                         data-has-email="{{ 'yes' if company.email else 'no' }}">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
@@ -111,17 +136,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             {% if company.type %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-    {% if company.type == 'Oil & Gas' %}bg-orange-100 text-orange-800
-    {% elif company.type == 'Petrochemical' %}bg-red-100 text-red-800
-    {% elif company.type == 'Power & Energy' %}bg-yellow-100 text-yellow-800
-    {% elif company.type == 'Manufacturing / Industrial Plants' %}bg-blue-100 text-blue-800
-    {% elif company.type == 'Food Processing / Food Industry' %}bg-green-100 text-green-800
-    {% elif company.type == 'Consumer Goods' %}bg-purple-100 text-purple-800
-    {% else %}bg-gray-100 text-gray-800{% endif %}">
-    {{ company.type }}
-</span>
-
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ company.type }}
+                            </span>
                             {% else %}
                             <span class="text-gray-400 text-sm">—</span>
                             {% endif %}
@@ -136,53 +153,20 @@
                                     </a>
                                 </div>
                                 {% else %}
-                                <div class="flex items-center mb-1">
-                                    <i class="fas fa-envelope text-gray-300 mr-2"></i>
-                                    <span class="text-gray-400 text-xs">No email</span>
-                                </div>
-                                {% endif %}
-
-                                {% if company.phone %}
-                                <div class="flex items-center text-xs text-gray-500">
-                                    <i class="fas fa-phone mr-2"></i>
-                                    {{ company.phone }}
-                                </div>
+                                <span class="text-gray-400 text-xs">No email</span>
                                 {% endif %}
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">
-                                {% if company.location %}
-                                <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
-                                {{ company.location }}
-                                {% else %}
-                                <span class="text-gray-400">—</span>
-                                {% endif %}
-                            </div>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ company.location or '—' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ company.added_date[:10] if company.added_date else 'N/A' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
-                                <button onclick="viewCompany('{{ company.id }}')"
-                                        class="text-blue-600 hover:text-blue-900" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="editCompany('{{ company.id }}')"
-                                        class="text-green-600 hover:text-green-900" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                {% if company.email %}
-                                <a href="/send?company={{ company.name }}&email={{ company.email }}"
-                                   class="text-purple-600 hover:text-purple-900" title="Send Application">
-                                    <i class="fas fa-paper-plane"></i>
-                                </a>
-                                {% endif %}
-                                <button onclick="deleteCompany('{{ company.id }}', '{{ company.name }}')"
-                                        class="text-red-600 hover:text-red-900" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <button onclick="editCompany('{{ company.id }}')" class="text-green-600 hover:text-green-900"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteCompany('{{ company.id }}','{{ company.name|escape }}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -190,42 +174,30 @@
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div class="text-center py-12">
-            <i class="fas fa-building text-gray-400 text-5xl mb-4"></i>
-            <p class="text-gray-500 text-lg">No companies yet</p>
-            <button onclick="showAddCompanyModal()" class="mt-4 text-blue-600 hover:text-blue-800 font-medium">
-                <i class="fas fa-plus mr-1"></i> Add your first company
-            </button>
-        </div>
-        {% endif %}
     </div>
 </div>
 
-<!-- Add/Edit Company Modal -->
-<div id="companyModal" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+<!-- Modal -->
+<div id="companyModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="companyModalOverlay" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
-                <!-- Modal Header -->
                 <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-bold text-gray-900" id="modalTitle">
                             <i class="fas fa-building text-blue-600 mr-2"></i>
                             Add New Company
                         </h3>
-                        <button onclick="closeCompanyModal()" class="text-gray-400 hover:text-gray-600">
+                        <button type="button" id="modalCloseBtn" class="text-gray-400 hover:text-gray-600" aria-label="Close modal">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Modal Body -->
-                <form id="companyForm" class="p-6 space-y-4">
+                <form id="companyForm" class="p-6 space-y-4" onsubmit="event.preventDefault(); submitCompany();">
                     <input type="hidden" id="companyId" name="id">
 
-                    <!-- Company Name -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Company Name <span class="text-red-500">*</span>
@@ -236,21 +208,18 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Type -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
                             <select id="companyType" name="type" class="form-input" required>
-    <option value="Oil & Gas" selected>Oil & Gas</option>
-    <option value="Petrochemical">Petrochemical</option>
-    <option value="Power & Energy">Power & Energy</option>
-    <option value="Manufacturing / Industrial Plants">Manufacturing / Industrial Plants</option>
-    <option value="Food Processing / Food Industry">Food Processing / Food Industry</option>
-    <option value="Consumer Goods">Consumer Goods</option>
-</select>
-
+                                <option value="Oil & Gas" selected>Oil & Gas</option>
+                                <option value="Petrochemical">Petrochemical</option>
+                                <option value="Power & Energy">Power & Energy</option>
+                                <option value="Manufacturing / Industrial Plants">Manufacturing / Industrial Plants</option>
+                                <option value="Food Processing / Food Industry">Food Processing / Food Industry</option>
+                                <option value="Consumer Goods">Consumer Goods</option>
+                            </select>
                         </div>
 
-                        <!-- Location -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
                             <input type="text" id="companyLocation" name="location"
@@ -259,21 +228,20 @@
                         </div>
                     </div>
 
-                    <!-- Contact Information -->
                     <div class="border-t pt-4">
                         <h4 class="font-semibold text-gray-900 mb-3">Contact Information</h4>
 
                         <div class="space-y-3">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-envelope text-gray-400 mr-1"></i> Email
+                                    <i class="fas fa-envelope text-gray-400 mr-1"></i> Email Addresses
                                 </label>
-                                <input type="email" id="companyEmail" name="email"
-                                       placeholder="hr@company.com"
+                                <input type="text" id="companyEmail" name="email"
+                                       placeholder="hr@company.com, jobs@company.com, careers@company.com"
                                        class="form-input">
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-info-circle text-blue-500"></i>
-                                    Required to send applications
+                                    Multiple emails separated by commas (required to send applications)
                                 </p>
                             </div>
 
@@ -297,7 +265,6 @@
                         </div>
                     </div>
 
-                    <!-- Notes -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-sticky-note text-gray-400 mr-1"></i> Notes
@@ -308,9 +275,8 @@
                     </div>
                 </form>
 
-                <!-- Modal Footer -->
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-                    <button type="button" onclick="closeCompanyModal()" class="btn-secondary">
+                    <button type="button" id="cancelBtn" class="btn-secondary">
                         <i class="fas fa-times mr-2"></i>Cancel
                     </button>
                     <button type="button" onclick="submitCompany()" id="submitBtn" class="btn-primary">
@@ -325,166 +291,237 @@
 
 {% block scripts %}
 <script>
-function showAddCompanyModal() {
-    document.getElementById('companyModal').classList.remove('hidden');
+// Helpers
+function showAddCompanyModal(){
+    const modal = document.getElementById('companyModal');
+    const overlay = document.getElementById('companyModalOverlay');
     document.getElementById('companyForm').reset();
     document.getElementById('companyId').value = '';
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-building text-blue-600 mr-2"></i>Add New Company';
+
+    // show modal
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    overlay.style.display = '';
+    // prevent background scroll
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    // focus first input
+    setTimeout(()=>{ document.getElementById('companyName').focus(); }, 50);
+}
+function closeCompanyModal(){
+    const modal = document.getElementById('companyModal');
+    const overlay = document.getElementById('companyModalOverlay');
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    overlay.style.display = 'none';
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    // return focus to Add button
+    try{ document.querySelector('.btn-primary').focus(); }catch(e){}
+    // clear form for safety
+    try{ document.getElementById('companyForm').reset(); }catch(e){}
 }
 
-function closeCompanyModal() {
-    document.getElementById('companyModal').classList.add('hidden');
+// Escape helpers
+function escapeHtml(s){ if(!s && s !== 0) return ''; return String(s).replace(/[&<>"']/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]); }); }
+function escapeAttr(s){ if(!s && s !== 0) return ''; return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+
+// Render a table row from company object
+function renderCompanyRow(company){
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50 company-row';
+    tr.dataset.id = company.id || '';
+    tr.dataset.name = (company.name || '').toLowerCase();
+    tr.dataset.type = (company.type || '').toLowerCase();
+    tr.dataset.location = (company.location || '').toLowerCase();
+    tr.dataset.hasEmail = (company.email ? 'yes' : 'no');
+
+    const nameChar = (company.name && company.name[0]) ? company.name[0].toUpperCase() : '';
+
+    const nameCell = `
+        <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">${escapeHtml(nameChar)}</span>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">${escapeHtml(company.name || '')}</div>
+                    ${company.website ? `<a href="${escapeHtml(company.website)}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800"><i class="fas fa-external-link-alt mr-1"></i>Website</a>` : ''}
+                </div>
+            </div>
+        </td>
+    `;
+
+    const typeCell = `<td class="px-6 py-4 whitespace-nowrap">${company.type ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${escapeHtml(company.type)}</span>` : '<span class="text-gray-400 text-sm">—</span>'}</td>`;
+
+    const contactCell = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${company.email ? `<div class="flex items-center mb-1"><i class="fas fa-envelope text-green-500 mr-2"></i><a href="mailto:${escapeHtml(company.email)}" class="text-blue-600 hover:text-blue-800">${escapeHtml(company.email)}</a></div>` : '<span class="text-gray-400 text-xs">No email</span>'}</div></td>`;
+
+    const locationCell = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${escapeHtml(company.location || '—')}</td>`;
+    const addedCell = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${escapeHtml((company.added_date || '').slice(0,10) || 'N/A')}</td>`;
+    // Use data- attributes safely for onclick values
+    const safeId = escapeAttr(company.id || '');
+    const safeName = escapeAttr(company.name || '');
+    const actionsCell = `<td class="px-6 py-4 whitespace-nowrap text-sm font-medium"><div class="flex space-x-2"><button onclick="editCompany('${safeId}')" class="text-green-600 hover:text-green-900"><i class="fas fa-edit"></i></button><button onclick="deleteCompany('${safeId}','${safeName}')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button></div></td>`;
+
+    tr.innerHTML = nameCell + typeCell + contactCell + locationCell + addedCell + actionsCell;
+    return tr;
 }
 
-async function submitCompany() {
+// Update numeric stat by delta
+function incrementStat(id, delta){ const el = document.getElementById(id); if(!el) return; const v = parseInt(el.textContent||'0',10)||0; el.textContent = v + delta; }
+
+// Simple toast (fallback)
+function showToast(message, type){
+    // minimal unobtrusive toast: uses alert as fallback
+    try{
+        const existing = document.getElementById('cf-toast');
+        if(existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.id = 'cf-toast';
+        toast.setAttribute('role','status');
+        toast.style.position = 'fixed';
+        toast.style.right = '20px';
+        toast.style.top = '20px';
+        toast.style.zIndex = '9999';
+        toast.style.padding = '10px 14px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)';
+        toast.style.background = (type === 'error' ? '#fee2e2' : '#ecfdf5');
+        toast.style.color = (type === 'error' ? '#b91c1c' : '#065f46');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(()=>{ toast.remove(); }, 3500);
+    }catch(e){ alert(message); }
+}
+
+// Submit company via AJAX and insert row without reload
+async function submitCompany(){
     const form = document.getElementById('companyForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
+    if(!form.checkValidity()){ form.reportValidity(); return; }
 
-    const formData = new FormData(form);
-    const submitBtn = document.getElementById('submitBtn');
-    const originalContent = submitBtn.innerHTML;
+    const btn = document.getElementById('submitBtn');
+    const orig = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    const data = new FormData(form);
+    const companyId = document.getElementById('companyId').value;
+    const url = companyId ? `/api/companies/${encodeURIComponent(companyId)}` : '/api/companies';
+    const method = companyId ? 'PUT' : 'POST';
 
-    try {
-        const companyId = document.getElementById('companyId').value;
-        const url = companyId ? `/api/companies/${companyId}` : '/api/companies';
-        const method = companyId ? 'PUT' : 'POST';
+    try{
+        const res = await fetch(url, { method, body: data });
+        // if server returns non-json, this will throw and go to catch
+        const json = await res.json();
 
-        const response = await fetch(url, {
-            method: method,
-            body: formData
-        });
+        if(json && json.success){
+            // Always close modal on success (ensure "add panel" disappears)
+            closeCompanyModal();
 
-        const data = await response.json();
+            // If backend returned created company object, use it to update DOM
+            const company = json.company || json.updated_company || null;
 
-        if (data.success) {
-            showToast(companyId ? 'Company updated successfully!' : 'Company added successfully!', 'success');
-            setTimeout(() => window.location.reload(), 1000);
+            if(company){
+                // ensure table visible
+                document.getElementById('noCompaniesPlaceholder').style.display = 'none';
+                document.getElementById('companiesTableWrapper').style.display = '';
+
+                const tbody = document.getElementById('companiesTbody');
+                const row = renderCompanyRow(company);
+                // insert at top
+                if(tbody.firstChild) tbody.insertBefore(row, tbody.firstChild);
+                else tbody.appendChild(row);
+
+                // update stats
+                incrementStat('totalCompanies', 1);
+                if(company.email) incrementStat('withEmailCount',1); else incrementStat('withoutEmailCount',1);
+
+                // if added this month
+                try{ const added = new Date(company.added_date); const now = new Date(); if(added.getFullYear()===now.getFullYear() && added.getMonth()===now.getMonth()){ incrementStat('addedThisMonth',1); } }catch(e){}
+
+                showToast('Company saved', 'success');
+            } else {
+                // fallback: server didn't return object — reload as last resort
+                window.location.reload();
+            }
+            // clear form
+            form.reset();
         } else {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalContent;
-            showToast('Failed to save company: ' + (data.error || 'Unknown error'), 'error');
+            throw new Error(json && json.error ? json.error : 'Save failed');
         }
-    } catch (error) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalContent;
-        showToast('Network error: ' + error.message, 'error');
+    }catch(err){
+        showToast('Error: '+err.message,'error');
+    }finally{
+        btn.disabled = false; btn.innerHTML = orig;
     }
 }
 
-async function viewCompany(id) {
-    window.location.href = `/companies/${id}`;
-}
+// Navigate to company detail/edit page
+function editCompany(id){ if(!id) return; window.location.href = '/companies/' + encodeURIComponent(id); }
 
-async function editCompany(id) {
-    try {
-        const response = await fetch(`/api/companies/${id}`);
-        const data = await response.json();
+// Delete via API and remove row from DOM
+async function deleteCompany(id, name){
+    if(!confirm('Are you sure you want to delete "' + name + '"? This action cannot be undone.')) return;
+    try{
+        const res = await fetch('/api/companies/' + encodeURIComponent(id), { method: 'DELETE' });
+        const json = await res.json();
+        if(json && json.success){
+            const row = document.querySelector(`.company-row[data-id="${id}"]`);
+            if(row) {
+                const hasEmail = row.dataset.hasEmail === 'yes';
+                row.remove();
+                incrementStat('totalCompanies', -1);
+                if(hasEmail) incrementStat('withEmailCount', -1); else incrementStat('withoutEmailCount', -1);
 
-        if (data.success) {
-            const company = data.company;
-
-            document.getElementById('companyId').value = company.id;
-            document.getElementById('companyName').value = company.name;
-            document.getElementById('companyType').value = company.type || '';
-            document.getElementById('companyLocation').value = company.location || '';
-            document.getElementById('companyEmail').value = company.email || '';
-            document.getElementById('companyPhone').value = company.phone || '';
-            document.getElementById('companyWebsite').value = company.website || '';
-            document.getElementById('companyNotes').value = company.notes || '';
-
-            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-blue-600 mr-2"></i>Edit Company';
-            document.getElementById('companyModal').classList.remove('hidden');
+                const tbody = document.getElementById('companiesTbody');
+                if(!tbody || tbody.children.length === 0){
+                    document.getElementById('companiesTableWrapper').style.display = 'none';
+                    document.getElementById('noCompaniesPlaceholder').style.display = '';
+                }
+            }
+            showToast('Company deleted', 'success');
         } else {
-            showToast('Failed to load company data', 'error');
+            throw new Error(json.error || 'Delete failed');
         }
-    } catch (error) {
-        showToast('Network error: ' + error.message, 'error');
-    }
+    }catch(err){ showToast('Error: '+err.message,'error'); }
 }
 
-async function deleteCompany(id, name) {
-    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/companies/${id}`, {
-            method: 'DELETE'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showToast('Company deleted successfully', 'success');
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            showToast('Failed to delete company: ' + (data.error || 'Unknown error'), 'error');
-        }
-    } catch (error) {
-        showToast('Network error: ' + error.message, 'error');
-    }
-}
-
-function filterCompanies() {
+// Filtering
+function filterCompanies(){
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
     const emailFilter = document.getElementById('emailFilter').value;
 
     const rows = document.querySelectorAll('.company-row');
-
     rows.forEach(row => {
-        const name = row.dataset.name;
-        const type = row.dataset.type;
-        const location = row.dataset.location;
-        const hasEmail = row.dataset.hasEmail;
+        const name = row.dataset.name || '';
+        const type = row.dataset.type || '';
+        const location = row.dataset.location || '';
+        const hasEmail = row.dataset.hasEmail || 'no';
 
         let show = true;
-
-        // Search filter
-        if (searchTerm && !name.includes(searchTerm) && !type.includes(searchTerm) && !location.includes(searchTerm)) {
-            show = false;
-        }
-
-        // Type filter
-        if (typeFilter && type !== typeFilter) {
-            show = false;
-        }
-
-        // Email filter
-        if (emailFilter === 'with' && hasEmail !== 'yes') {
-            show = false;
-        } else if (emailFilter === 'without' && hasEmail !== 'no') {
-            show = false;
-        }
+        if(searchTerm && !name.includes(searchTerm) && !type.includes(searchTerm) && !location.includes(searchTerm)) show = false;
+        if(typeFilter && type !== typeFilter) show = false;
+        if(emailFilter === 'with' && hasEmail !== 'yes') show = false;
+        if(emailFilter === 'without' && hasEmail !== 'no') show = false;
 
         row.style.display = show ? '' : 'none';
     });
 }
+function clearFilters(){ document.getElementById('searchInput').value=''; document.getElementById('typeFilter').value=''; document.getElementById('emailFilter').value=''; filterCompanies(); }
 
-function clearFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('typeFilter').value = '';
-    document.getElementById('emailFilter').value = '';
-    filterCompanies();
-}
+// Modal close handlers
+document.getElementById('companyModalOverlay').addEventListener('click', ()=>{ closeCompanyModal(); });
+document.getElementById('modalCloseBtn').addEventListener('click', ()=>{ closeCompanyModal(); });
+document.getElementById('cancelBtn').addEventListener('click', ()=>{ closeCompanyModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !document.getElementById('companyModal').classList.contains('hidden')) closeCompanyModal(); });
 
-// Close modal on outside click
-document.getElementById('companyModal').addEventListener('click', (e) => {
-    if (e.target.id === 'companyModal') {
-        closeCompanyModal();
-    }
-});
-
-// Close modal on Escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !document.getElementById('companyModal').classList.contains('hidden')) {
-        closeCompanyModal();
+// Accessibility: close modal if focus moves outside while open (optional safety)
+document.addEventListener('focusin', (e)=>{
+    const modal = document.getElementById('companyModal');
+    if(modal && !modal.classList.contains('hidden')){
+        // noop for now — keeping access but not forcing focus trap
     }
 });
 </script>

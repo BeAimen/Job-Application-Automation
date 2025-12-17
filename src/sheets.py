@@ -379,7 +379,7 @@ class SheetsClient:
             companies = []
 
             for row in rows:
-                if not row:
+                if len(row) < 2 or not row[0] or not row[1]:
                     continue
 
                 companies.append({
@@ -460,20 +460,38 @@ class SheetsClient:
         return True
 
     def delete_company(self, company_id: str) -> bool:
-        """Delete a company from the Companies sheet."""
         row_index = self._find_row_by_id(SHEET_COMPANIES, company_id)
         if not row_index:
             return False
 
-        try:
-            # Note: Deleting rows requires getting the sheet ID first
-            # This is a simplified version - you may need to implement proper row deletion
-            # For now, we'll just clear the row
-            self.service.spreadsheets().values().clear(
-                spreadsheetId=self.spreadsheet_id,
-                range=f"{SHEET_COMPANIES}!A{row_index}:J{row_index}"
-            ).execute()
-            return True
-        except Exception as e:
-            print(f"[ERROR] Failed to delete company: {e}")
+        # Get sheetId dynamically
+        spreadsheet = self.service.spreadsheets().get(
+            spreadsheetId=self.spreadsheet_id
+        ).execute()
+
+        sheet_id = None
+        for sheet in spreadsheet["sheets"]:
+            if sheet["properties"]["title"] == SHEET_COMPANIES:
+                sheet_id = sheet["properties"]["sheetId"]
+                break
+
+        if sheet_id is None:
             return False
+
+        self.service.spreadsheets().batchUpdate(
+            spreadsheetId=self.spreadsheet_id,
+            body={
+                "requests": [{
+                    "deleteDimension": {
+                        "range": {
+                            "sheetId": sheet_id,
+                            "dimension": "ROWS",
+                            "startIndex": row_index - 1,
+                            "endIndex": row_index
+                        }
+                    }
+                }]
+            }
+        ).execute()
+
+        return True

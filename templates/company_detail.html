@@ -112,18 +112,32 @@
                     </h3>
                 </div>
                 <div class="p-6 space-y-4">
-                    {% if company.email %}
-                    <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                        <div class="bg-green-100 p-2 rounded-lg">
-                            <i class="fas fa-envelope text-green-600"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                            <a href="mailto:{{ company.email }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 break-all">
-                                {{ company.email }}
-                            </a>
-                        </div>
-                    </div>
+    {% if company.email %}
+    {% set emails = company.email.split(',') %}
+    {% for email in emails %}
+    <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+        <div class="bg-green-100 p-2 rounded-lg">
+            <i class="fas fa-envelope text-green-600"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">
+                Email {{ loop.index }}{% if loop.first %} (Primary){% endif %}
+            </p>
+            <a href="mailto:{{ email.strip() }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 break-all">
+                {{ email.strip() }}
+            </a>
+        </div>
+        <a href="mailto:{{ email.strip() }}" class="text-blue-600 hover:text-blue-700">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+        <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+        <p class="text-sm text-yellow-800">No email address available</p>
+    </div>
+    {% endif %}
                     {% else %}
                     <div class="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
                         <i class="fas fa-exclamation-triangle text-yellow-500"></i>
