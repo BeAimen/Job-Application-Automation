@@ -56,11 +56,6 @@
 
                 <!-- Action Buttons -->
                 <div class="flex items-center space-x-2">
-                    <button onclick="editCompany('{{ company.id }}')"
-                            class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all backdrop-blur-sm">
-                        <i class="fas fa-edit mr-2"></i>Edit
-                    </button>
-
                     {% if company.email %}
                     <a href="/send?company={{ company.name }}&email={{ company.email }}"
                        class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all">
@@ -294,10 +289,4 @@
         </div>
     </div>
 </div>
-
-<script>
-async function editCompany(id) {
-    window.location.href = `/companies?edit=${id}`;
-}
-</script>
 {% endblock %}
