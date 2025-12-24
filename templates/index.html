@@ -150,7 +150,7 @@
                         <p class="text-sm font-medium text-gray-900">Email sent</p>
                         <p class="text-xs text-gray-500">to {{ app.company }}</p>
                         <p class="text-xs text-gray-400 mt-1">
-                            {{ app.sent_date[11:16] if app.sent_date and len(app.sent_date) > 16 else 'N/A' }}
+                            {{ app.sent_date[11:16] if app.sent_date and (app.sent_date|length) > 16 else 'N/A' }}
                         </p>
                     </div>
                 </div>
