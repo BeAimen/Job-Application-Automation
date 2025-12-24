@@ -17,6 +17,7 @@
                         <i class="fas fa-envelope text-gray-400"></i>
                     </div>
                     <textarea
+                        id="emailsInput"
                         name="emails"
                         rows="3"
                         required
@@ -81,13 +82,26 @@
             <section aria-labelledby="companyHeading">
                 <h3 id="companyHeading" class="sr-only">Company</h3>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
-                <input
-                    type="text"
-                    name="company"
-                    placeholder="Leave blank for default"
-                    value="{{ prefill_company or '' }}"
-                    class="form-input w-full border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                />
+                <div class="relative">
+                    <input
+                        type="text"
+                        name="company"
+                        id="companyInput"
+                        list="companySuggestions"
+                        placeholder="Choose an existing company or type a new one"
+                        value="{{ prefill_company or '' }}"
+                        class="form-input w-full border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    />
+                    <datalist id="companySuggestions">
+                        {% for c in companies %}
+                        <option value="{{ c.name }}"></option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">
+                    <i class="fas fa-building text-blue-500 mr-1"></i>
+                    Start typing to pick a saved company or enter a new one.
+                </p>
             </section>
 
             <!-- Position: Single or Dual -->
@@ -256,7 +270,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
-                            <select name="company_type" class="form-input w-full" required>
+                            <select name="company_type" id="companyTypeSelect" class="form-input w-full" required>
                                 <option value="Oil & Gas" {% if prefill_company_type == 'Oil & Gas' %}selected{% endif %}>Oil & Gas</option>
                                 <option value="Petrochemical" {% if prefill_company_type == 'Petrochemical' %}selected{% endif %}>Petrochemical</option>
                                 <option value="Power & Energy" {% if prefill_company_type == 'Power & Energy' %}selected{% endif %}>Power & Energy</option>
@@ -271,6 +285,7 @@
                             <input
                                 type="url"
                                 name="website"
+                                id="websiteInput"
                                 placeholder="https://company.com"
                                 value="{{ prefill_website or '' }}"
                                 class="form-input w-full"
@@ -285,6 +300,7 @@
                             <input
                                 type="tel"
                                 name="phone"
+                                id="phoneInput"
                                 placeholder="+213 5xx xxx xxx"
                                 value="{{ prefill_phone or '' }}"
                                 class="form-input w-full"
@@ -296,6 +312,7 @@
                             <input
                                 type="text"
                                 name="place"
+                                id="placeInput"
                                 placeholder="City, Country or Industrial Site"
                                 value="{{ prefill_place or '' }}"
                                 class="form-input w-full"
@@ -310,6 +327,7 @@
                             <input
                                 type="url"
                                 name="reference_link"
+                                id="referenceInput"
                                 placeholder="https://job-posting-link.com"
                                 value="{{ prefill_reference_link or '' }}"
                                 class="form-input w-full"
@@ -321,6 +339,7 @@
                             <input
                                 type="text"
                                 name="salary"
+                                id="salaryInput"
                                 placeholder="e.g. 80,000 – 120,000 DZD / month"
                                 value="{{ prefill_salary or '' }}"
                                 class="form-input w-full"
@@ -333,6 +352,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
                         <textarea
                             name="notes"
+                            id="notesInput"
                             rows="3"
                             placeholder="Interview notes, recruiter name, internal remarks..."
                             class="form-input w-full"
@@ -364,6 +384,8 @@ const attachmentsData = {
     fr: {{ attachments_fr | tojson }}
 };
 
+const companiesData = {{ companies | tojson }};
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     const defaultLanguage = '{{ default_language }}';
@@ -376,6 +398,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Trigger the change to update the UI
     handleLanguageChange(defaultLanguage);
+
+    const companyInput = document.getElementById('companyInput');
+    if (companyInput) {
+        companyInput.addEventListener('change', () => handleCompanySelection(companyInput.value));
+        companyInput.addEventListener('blur', () => handleCompanySelection(companyInput.value));
+
+        if (companyInput.value) {
+            handleCompanySelection(companyInput.value);
+        }
+    }
 });
 
 function handleLanguageChange(language) {
@@ -448,6 +480,61 @@ function updateAttachmentSelect(language, selectId) {
         if (index === 0) option.selected = true;
         select.appendChild(option);
     });
+}
+
+function handleCompanySelection(name) {
+    const company = findCompanyByName(name);
+    if (company) {
+        applyCompanyDetails(company);
+    }
+}
+
+function findCompanyByName(name) {
+    if (!name) return null;
+    return companiesData.find(c => (c.name || '').toLowerCase() === name.trim().toLowerCase()) || null;
+}
+
+function applyCompanyDetails(company) {
+    if (!company) return;
+    showAdditionalFields();
+
+    const emailField = document.getElementById('emailsInput');
+    const formattedEmails = (company.email || '')
+        .split(',')
+        .map(e => e.trim())
+        .filter(Boolean)
+        .join('\n');
+
+    if (emailField && formattedEmails) {
+        emailField.value = formattedEmails;
+    }
+
+    setFieldValue(document.getElementById('companyTypeSelect'), company.type);
+    setFieldValue(document.getElementById('websiteInput'), company.website);
+    setFieldValue(document.getElementById('phoneInput'), company.phone);
+    setFieldValue(document.getElementById('placeInput'), company.location);
+    setFieldValue(document.getElementById('referenceInput'), company.reference_link);
+    setFieldValue(document.getElementById('salaryInput'), company.salary_range);
+    setFieldValue(document.getElementById('notesInput'), company.notes);
+}
+
+function setFieldValue(element, value) {
+    if (!element || !value) return;
+    element.value = value;
+}
+
+function showAdditionalFields() {
+    const fields = document.getElementById('additionalFields');
+    const btn = document.getElementById('toggleAdditionalBtn');
+
+    if (fields && fields.classList.contains('hidden')) {
+        fields.classList.remove('hidden');
+        fields.setAttribute('aria-hidden', 'false');
+    }
+
+    if (btn) {
+        btn.setAttribute('aria-expanded', 'true');
+    }
 }
 
 function toggleAdditional() {

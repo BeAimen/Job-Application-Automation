@@ -27,7 +27,7 @@ from src.attachments import AttachmentSelector
 from src.followup import FollowupEngine
 from src.utils import (
     validate_email, get_default_body, get_default_position,
-    substitute_placeholders, is_followup_due
+    substitute_placeholders, is_followup_due, get_default_company
 )
 from src.analytics import AnalyticsEngine
 from src.templates_manager import TemplateManager
@@ -188,8 +188,13 @@ async def send_page(
     website: Optional[str] = None,
     company_type: Optional[str] = None
 ):
-    _, _, attachment_selector = get_clients()
+    sheets_client, _, attachment_selector = get_clients()
     template_manager = get_template_manager()
+
+    try:
+        companies = sheets_client.get_all_companies()
+    except Exception:
+        companies = []
 
     # Get available attachments
     attachments_en = [f.name for f in attachment_selector.get_attachments('en')]
@@ -295,7 +300,8 @@ async def send_page(
             "prefill_place": prefill_place,
             "prefill_salary": prefill_salary,
             "prefill_reference_link": prefill_reference_link,
-            "prefill_notes": prefill_notes
+            "prefill_notes": prefill_notes,
+            "companies": companies
         }
     )
 
@@ -326,6 +332,12 @@ async def send_application(
     if not mailer:
         raise HTTPException(status_code=500, detail="Gmail service not available")
 
+    def clean_optional(value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip()
+        return value if value else None
+
     # Parse emails (support newline-separated lists)
     email_list = [e.strip() for e in emails.replace('\n', ',').split(',') if e.strip()]
 
@@ -343,6 +355,32 @@ async def send_application(
     # Process languages
     languages = ['en', 'fr'] if language == 'both' else [language]
 
+    company_name = clean_optional(company)
+    company_type_value = clean_optional(company_type)
+    phone_value = clean_optional(phone)
+    website_value = clean_optional(website)
+    notes_value = clean_optional(notes)
+    salary_value = clean_optional(salary)
+    place_value = clean_optional(place)
+    reference_link_value = clean_optional(reference_link)
+
+    # Ensure company data is captured/updated in Companies sheet when provided
+    try:
+        if company_name:
+            sheets_client.upsert_company_from_application(
+                company_name=company_name,
+                emails=email_list,
+                company_type=company_type_value,
+                phone=phone_value,
+                website=website_value,
+                location=place_value,
+                reference_link=reference_link_value,
+                salary_range=salary_value,
+                notes=notes_value
+            )
+    except Exception as e:
+        print(f"[WARN] Failed to upsert company from send form: {e}")
+
     results = []
 
     for lang in languages:
@@ -354,6 +392,8 @@ async def send_application(
 
         if not final_position:
             final_position = get_default_position(lang)
+
+        final_company = company_name or get_default_company(lang)
 
         # Get body
         if language == 'both':
@@ -390,24 +430,45 @@ async def send_application(
         # Send to each recipient
         for recipient_email in email_list:
             try:
-                app_id = sheets_client.add_application(
-                    email=recipient_email,
-                    language=lang,
-                    company=company,
-                    position=final_position,
-                    phone=phone,
-                    website=website,
-                    notes=notes,
-                    status='Pending',
-                    company_type=company_type,
-                    salary=salary,
-                    place=place,
-                    reference_link=reference_link
-                )
+                existing_app = sheets_client.find_application_by_email(recipient_email, lang)
+
+                if existing_app:
+                    app_id = existing_app["id"]
+                    updated = sheets_client.update_application_fields(
+                        app_id=app_id,
+                        language=lang,
+                        company=final_company,
+                        position=final_position,
+                        phone=phone_value,
+                        website=website_value,
+                        notes=notes_value,
+                        company_type=company_type_value,
+                        salary=salary_value,
+                        place=place_value,
+                        reference_link=reference_link_value,
+                        status='Pending'
+                    )
+                    if not updated:
+                        raise ValueError("Failed to update existing application row")
+                else:
+                    app_id = sheets_client.add_application(
+                        email=recipient_email,
+                        language=lang,
+                        company=final_company,
+                        position=final_position,
+                        phone=phone_value,
+                        website=website_value,
+                        notes=notes_value,
+                        status='Pending',
+                        company_type=company_type_value,
+                        salary=salary_value,
+                        place=place_value,
+                        reference_link=reference_link_value
+                    )
 
                 final_body = substitute_placeholders(
                     final_body_template,
-                    company,
+                    final_company,
                     final_position,
                     lang
                 )
@@ -790,6 +851,8 @@ async def create_company(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         location: Optional[str] = Form(None),
+        reference_link: Optional[str] = Form(None),
+        salary_range: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
     """Create a new company and return the created company object."""
@@ -803,6 +866,8 @@ async def create_company(
             phone=phone,
             website=website,
             location=location,
+            reference_link=reference_link,
+            salary_range=salary_range,
             notes=notes
         )
 
@@ -856,6 +921,8 @@ async def update_company(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         location: Optional[str] = Form(None),
+        reference_link: Optional[str] = Form(None),
+        salary_range: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
     """Update an existing company."""
@@ -870,6 +937,8 @@ async def update_company(
             phone=phone,
             website=website,
             location=location,
+            reference_link=reference_link,
+            salary_range=salary_range,
             notes=notes
         )
 

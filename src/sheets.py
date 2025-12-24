@@ -8,17 +8,16 @@ from src.utils import (
 )
 
 
-# Column order for Applications (UPDATED with new fields)
 APPLICATION_COLUMNS = [
     'ID', 'Company', 'Email', 'Position', 'Status', 'Sent Date',
     'Followups', 'Next Followup Date', 'Phone Number', 'Website',
     'Body', 'CV', 'Notes', 'Type', 'Salary', 'Place', 'Reference Link'
 ]
 
-# Column order for Companies sheet (NEW)
 COMPANY_COLUMNS = [
     'ID', 'Company Name', 'Type', 'Email', 'Phone', 'Website',
-    'Location', 'Notes', 'Added Date', 'Last Updated'
+    'Location', 'Reference Link', 'Salary Range', 'Notes',
+    'Added Date', 'Last Updated'
 ]
 
 ACTIVITY_LOG_COLUMNS = [
@@ -326,6 +325,75 @@ class SheetsClient:
         values = result.get("values", [])
         return values[0][0] if values and values[0] else ""
 
+    def find_application_by_email(self, email: str, language: str) -> Optional[Dict[str, Any]]:
+        """Find an application by recipient email (case-insensitive)."""
+        sheet_name = self._get_sheet_name(language)
+
+        result = self.service.spreadsheets().values().get(
+            spreadsheetId=self.spreadsheet_id,
+            range=f"{sheet_name}!A2:Q"
+        ).execute()
+
+        rows = result.get("values", [])
+        for idx, row in enumerate(rows, start=2):
+            if len(row) > 2 and row[2] and row[2].lower() == email.lower():
+                return {
+                    "id": row[0],
+                    "row_index": idx
+                }
+        return None
+
+    def update_application_fields(
+        self,
+        app_id: str,
+        language: str,
+        company: Optional[str] = None,
+        position: Optional[str] = None,
+        phone: Optional[str] = None,
+        website: Optional[str] = None,
+        notes: Optional[str] = None,
+        company_type: Optional[str] = None,
+        salary: Optional[str] = None,
+        place: Optional[str] = None,
+        reference_link: Optional[str] = None,
+        status: Optional[str] = None
+    ) -> bool:
+        """Update application fields without creating a new row."""
+        sheet_name = self._get_sheet_name(language)
+        row_index = self._find_row_by_id(sheet_name, app_id)
+        if not row_index:
+            return False
+
+        updates = []
+        if company is not None:
+            updates.append({"range": f"{sheet_name}!B{row_index}", "values": [[company]]})
+        if position is not None:
+            updates.append({"range": f"{sheet_name}!D{row_index}", "values": [[position]]})
+        if status is not None:
+            updates.append({"range": f"{sheet_name}!E{row_index}", "values": [[status]]})
+        if phone is not None:
+            updates.append({"range": f"{sheet_name}!I{row_index}", "values": [[phone]]})
+        if website is not None:
+            updates.append({"range": f"{sheet_name}!J{row_index}", "values": [[website]]})
+        if notes is not None:
+            updates.append({"range": f"{sheet_name}!M{row_index}", "values": [[notes]]})
+        if company_type is not None:
+            updates.append({"range": f"{sheet_name}!N{row_index}", "values": [[company_type]]})
+        if salary is not None:
+            updates.append({"range": f"{sheet_name}!O{row_index}", "values": [[salary]]})
+        if place is not None:
+            updates.append({"range": f"{sheet_name}!P{row_index}", "values": [[place]]})
+        if reference_link is not None:
+            updates.append({"range": f"{sheet_name}!Q{row_index}", "values": [[reference_link]]})
+
+        if updates:
+            self.service.spreadsheets().values().batchUpdate(
+                spreadsheetId=self.spreadsheet_id,
+                body={"data": updates, "valueInputOption": "RAW"}
+            ).execute()
+
+        return True
+
     # ==========================================================
     # COMPANIES MANAGEMENT (NEW SECTION)
     # ==========================================================
@@ -338,6 +406,8 @@ class SheetsClient:
         phone: Optional[str] = None,
         website: Optional[str] = None,
         location: Optional[str] = None,
+        reference_link: Optional[str] = None,
+        salary_range: Optional[str] = None,
         notes: Optional[str] = None
     ) -> str:
         """Add a new company to the Companies sheet."""
@@ -352,6 +422,8 @@ class SheetsClient:
             phone or "",
             website or "",
             location or "",
+            reference_link or "",
+            salary_range or "",
             notes or "",
             added_date,
             added_date  # Last Updated
@@ -359,7 +431,7 @@ class SheetsClient:
 
         self.service.spreadsheets().values().append(
             spreadsheetId=self.spreadsheet_id,
-            range=f"{SHEET_COMPANIES}!A:J",
+            range=f"{SHEET_COMPANIES}!A:L",
             valueInputOption="RAW",
             insertDataOption="INSERT_ROWS",
             body={"values": [row]}
@@ -372,7 +444,7 @@ class SheetsClient:
         try:
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=self.spreadsheet_id,
-                range=f"{SHEET_COMPANIES}!A2:J"
+                range=f"{SHEET_COMPANIES}!A2:L"
             ).execute()
 
             rows = result.get("values", [])
@@ -390,15 +462,25 @@ class SheetsClient:
                     "phone": row[4] if len(row) > 4 else "",
                     "website": row[5] if len(row) > 5 else "",
                     "location": row[6] if len(row) > 6 else "",
-                    "notes": row[7] if len(row) > 7 else "",
-                    "added_date": row[8] if len(row) > 8 else "",
-                    "last_updated": row[9] if len(row) > 9 else ""
+                    "reference_link": row[7] if len(row) > 7 else "",
+                    "salary_range": row[8] if len(row) > 8 else "",
+                    "notes": row[9] if len(row) > 9 else "",
+                    "added_date": row[10] if len(row) > 10 else "",
+                    "last_updated": row[11] if len(row) > 11 else ""
                 })
 
             return companies
         except Exception as e:
             print(f"[ERROR] Failed to get companies: {e}")
             return []
+
+    def get_company_by_name(self, company_name: str) -> Optional[Dict[str, Any]]:
+        """Find a company by name (case-insensitive)."""
+        companies = self.get_all_companies()
+        for company in companies:
+            if company["name"].lower() == company_name.lower():
+                return company
+        return None
 
     def get_company_by_id(self, company_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific company by ID."""
@@ -417,6 +499,8 @@ class SheetsClient:
         phone: Optional[str] = None,
         website: Optional[str] = None,
         location: Optional[str] = None,
+        reference_link: Optional[str] = None,
+        salary_range: Optional[str] = None,
         notes: Optional[str] = None
     ) -> bool:
         """Update a company's information."""
@@ -445,11 +529,15 @@ class SheetsClient:
             updates.append({"range": f"{SHEET_COMPANIES}!F{row_index}", "values": [[website]]})
         if location is not None:
             updates.append({"range": f"{SHEET_COMPANIES}!G{row_index}", "values": [[location]]})
+        if reference_link is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!H{row_index}", "values": [[reference_link]]})
+        if salary_range is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!I{row_index}", "values": [[salary_range]]})
         if notes is not None:
-            updates.append({"range": f"{SHEET_COMPANIES}!H{row_index}", "values": [[notes]]})
+            updates.append({"range": f"{SHEET_COMPANIES}!J{row_index}", "values": [[notes]]})
 
         # Always update last_updated
-        updates.append({"range": f"{SHEET_COMPANIES}!J{row_index}", "values": [[last_updated]]})
+        updates.append({"range": f"{SHEET_COMPANIES}!L{row_index}", "values": [[last_updated]]})
 
         if updates:
             self.service.spreadsheets().values().batchUpdate(
@@ -458,6 +546,61 @@ class SheetsClient:
             ).execute()
 
         return True
+
+    def upsert_company_from_application(
+        self,
+        company_name: str,
+        emails: List[str],
+        company_type: Optional[str] = None,
+        phone: Optional[str] = None,
+        website: Optional[str] = None,
+        location: Optional[str] = None,
+        reference_link: Optional[str] = None,
+        salary_range: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> Optional[str]:
+        """Create or update a company using data provided from an application."""
+        if not company_name:
+            return None
+
+        normalized_emails = [e.strip() for e in emails if e.strip()]
+        email_string = ", ".join(dict.fromkeys([e for e in normalized_emails]))
+
+        existing = self.get_company_by_name(company_name)
+        if existing:
+            merged_emails = self._merge_emails(existing.get("email", ""), normalized_emails)
+            self.update_company(
+                company_id=existing["id"],
+                company_name=company_name,
+                company_type=company_type or existing.get("type", ""),
+                email=merged_emails,
+                phone=phone or existing.get("phone", ""),
+                website=website or existing.get("website", ""),
+                location=location or existing.get("location", ""),
+                reference_link=reference_link or existing.get("reference_link", ""),
+                salary_range=salary_range or existing.get("salary_range", ""),
+                notes=notes or existing.get("notes", "")
+            )
+            return existing["id"]
+
+        return self.add_company(
+            company_name=company_name,
+            company_type=company_type,
+            email=email_string,
+            phone=phone,
+            website=website,
+            location=location,
+            reference_link=reference_link,
+            salary_range=salary_range,
+            notes=notes
+        )
+
+    @staticmethod
+    def _merge_emails(existing_emails: str, new_emails: List[str]) -> str:
+        """Combine existing comma-separated emails with new ones, removing duplicates."""
+        existing_list = [e.strip() for e in existing_emails.split(",") if e.strip()]
+        merged = list(dict.fromkeys(existing_list + new_emails))
+        return ", ".join(merged)
 
     def delete_company(self, company_id: str) -> bool:
         row_index = self._find_row_by_id(SHEET_COMPANIES, company_id)
