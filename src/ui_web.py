@@ -27,7 +27,8 @@ from src.attachments import AttachmentSelector
 from src.followup import FollowupEngine
 from src.utils import (
     validate_email, get_default_body, get_default_position,
-    substitute_placeholders, is_followup_due, get_default_company
+    substitute_placeholders, is_followup_due, get_default_company,
+    format_timestamp
 )
 from src.analytics import AnalyticsEngine
 from src.templates_manager import TemplateManager
@@ -102,17 +103,22 @@ async def home(request: Request):
     analytics = get_analytics()
 
     try:
+        tz_name = settings_manager.get_setting('timezone', 'UTC')
         # Get all applications
         apps_en = sheets_client.get_applications_for_followup('en')
         apps_fr = sheets_client.get_applications_for_followup('fr')
         all_apps = apps_en + apps_fr
 
+        def annotate_apps(apps):
+            for app in apps:
+                app['display_sent'] = format_timestamp(app.get('sent_date'), tz_name)
+            return apps
+
         # Calculate real stats
         total_applications = len(all_apps)
 
         # Sent today (use timezone from settings)
-        timezone = settings_manager.get_setting('timezone', 'UTC')
-        tz = pytz.timezone(timezone)
+        tz = pytz.timezone(tz_name)
         today = datetime.now(tz).date()
         sent_today = sum(1 for app in all_apps
                          if app.get('sent_date') and
@@ -138,16 +144,18 @@ async def home(request: Request):
         company_heatmap = analytics.get_company_heatmap(5)
 
         # Today's activity (real)
-        today_apps = [app for app in all_apps
-                      if app.get('sent_date') and
-                      datetime.fromisoformat(app['sent_date']).date() == today]
+        today_apps = annotate_apps([
+            app for app in all_apps
+            if app.get('sent_date') and
+            datetime.fromisoformat(app['sent_date']).date() == today
+        ])
 
         # Recent applications
-        recent_applications = sorted(
+        recent_applications = annotate_apps(sorted(
             all_apps,
             key=lambda x: x.get('sent_date', ''),
             reverse=True
-        )[:10]
+        )[:10])
 
     except Exception as e:
         print(f"Error loading dashboard data: {e}")
@@ -1027,6 +1035,7 @@ async def monitoring_page(request: Request):
     sheets_client, mailer, _ = get_clients()
 
     try:
+        tz_name = settings_manager.get_setting('timezone', 'UTC')
         # Get real API usage
         apps_en = sheets_client.get_applications_for_followup('en')
         apps_fr = sheets_client.get_applications_for_followup('fr')
@@ -1063,6 +1072,14 @@ async def monitoring_page(request: Request):
     gmail_stats = system_monitor.get_api_stats('gmail', 60)
     sheets_stats = system_monitor.get_api_stats('sheets', 60)
 
+    status_messages = {
+        'healthy': 'All services operational',
+        'warning': 'Some warnings detected',
+        'critical': 'Attention required',
+    }
+    status_message = status_messages.get(health.get('status'), 'Status unknown')
+    last_checked = format_timestamp(datetime.now().isoformat(), tz_name)
+
     return templates.TemplateResponse(
         "monitoring.html",
         {
@@ -1076,7 +1093,9 @@ async def monitoring_page(request: Request):
             "gmail_quota_percent": round(gmail_quota_percent, 1),
             "sheets_quota_used": sheets_operations_today,
             "sheets_quota_total": sheets_quota_total,
-            "sheets_quota_percent": round(sheets_quota_percent, 1)
+            "sheets_quota_percent": round(sheets_quota_percent, 1),
+            "status_message": status_message,
+            "last_checked": last_checked
         }
     )
 

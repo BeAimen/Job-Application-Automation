@@ -66,7 +66,7 @@ MAX_RETRIES = int(os.getenv('MAX_RETRIES', '3'))
 # FOLLOW-UP CONFIGURATION
 # ---------------------------------------------------------
 FOLLOWUP_DAYS = int(os.getenv('FOLLOWUP_DAYS', '7'))
-TIMEZONE = os.getenv('TIMEZONE', 'UTC')
+TIMEZONE = os.getenv('TIMEZONE', 'Europe/Paris')
 
 # ---------------------------------------------------------
 # ATTACHMENT FOLDERS

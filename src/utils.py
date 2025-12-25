@@ -5,6 +5,7 @@ from typing import Optional
 import pytz
 
 from src.config import TIMEZONE, FOLLOWUP_DAYS, DEFAULTS
+from settings_manager import settings_manager
 
 
 # ---------------------------------------------------------
@@ -26,9 +27,18 @@ def validate_email(email: str) -> bool:
 # ---------------------------------------------------------
 # TIMESTAMP HANDLING
 # ---------------------------------------------------------
+def get_active_timezone() -> pytz.timezone:
+    """Return the active timezone from settings (fallback to config)."""
+    tz_name = settings_manager.get_setting('timezone', TIMEZONE)
+    try:
+        return pytz.timezone(tz_name)
+    except Exception:
+        return pytz.timezone(TIMEZONE)
+
+
 def get_current_timestamp() -> str:
     """Return current timestamp in ISO 8601 format with timezone."""
-    tz = pytz.timezone(TIMEZONE)
+    tz = get_active_timezone()
     return datetime.now(tz).isoformat()
 
 
@@ -46,7 +56,7 @@ def calculate_next_followup(sent_date: str, days: int = FOLLOWUP_DAYS) -> str:
     Returns:
         ISO format datetime string for next follow-up.
     """
-    tz = pytz.timezone(TIMEZONE)
+    tz = get_active_timezone()
 
     try:
         dt = datetime.fromisoformat(sent_date)
@@ -59,6 +69,29 @@ def calculate_next_followup(sent_date: str, days: int = FOLLOWUP_DAYS) -> str:
 
     next_date = dt + timedelta(days=days)
     return next_date.isoformat()
+
+
+def format_timestamp(dt_str: Optional[str], tz_name: Optional[str] = None, fmt: str = "%Y-%m-%d %H:%M") -> str:
+    """Format an ISO datetime string into a friendly string in the desired timezone."""
+    if not dt_str:
+        return "N/A"
+
+    try:
+        dt = datetime.fromisoformat(dt_str)
+    except Exception:
+        return dt_str
+
+    tz = get_active_timezone() if tz_name is None else pytz.timezone(tz_name)
+
+    # If naive, assume UTC before converting
+    if dt.tzinfo is None:
+        dt = pytz.utc.localize(dt)
+
+    try:
+        localized = dt.astimezone(tz)
+        return localized.strftime(fmt)
+    except Exception:
+        return dt_str
 
 
 # ---------------------------------------------------------
