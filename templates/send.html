@@ -325,11 +325,11 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Reference Link</label>
                             <input
-                                type="url"
-                                name="reference_link"
+                                type="text"
+                                name="reference"
                                 id="referenceInput"
-                                placeholder="https://job-posting-link.com"
-                                value="{{ prefill_reference_link or '' }}"
+                                placeholder="Job reference, requisition ID, or source"
+                                value="{{ prefill_reference or '' }}"
                                 class="form-input w-full"
                             />
                         </div>
@@ -385,6 +385,15 @@ const attachmentsData = {
 };
 
 const companiesData = {{ companies | tojson }};
+
+// Fallback toast handler to avoid runtime errors if main.js fails to load
+if (typeof showToast !== 'function') {
+    function showToast(message, type = 'info') {
+        const friendly = `[${type.toUpperCase()}] ${message}`;
+        console.log(friendly);
+        alert(friendly);
+    }
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -513,7 +522,7 @@ function applyCompanyDetails(company) {
     setFieldValue(document.getElementById('websiteInput'), company.website);
     setFieldValue(document.getElementById('phoneInput'), company.phone);
     setFieldValue(document.getElementById('placeInput'), company.location);
-    setFieldValue(document.getElementById('referenceInput'), company.reference_link);
+    setFieldValue(document.getElementById('referenceInput'), company.reference);
     setFieldValue(document.getElementById('salaryInput'), company.salary_range);
     setFieldValue(document.getElementById('notesInput'), company.notes);
 }

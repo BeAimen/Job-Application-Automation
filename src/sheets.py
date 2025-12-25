@@ -11,12 +11,12 @@ from src.utils import (
 APPLICATION_COLUMNS = [
     'ID', 'Company', 'Email', 'Position', 'Status', 'Sent Date',
     'Followups', 'Next Followup Date', 'Phone Number', 'Website',
-    'Body', 'CV', 'Notes', 'Type', 'Salary', 'Place', 'Reference Link'
+    'Body', 'CV', 'Notes', 'Type', 'Salary', 'Place', 'Reference'
 ]
 
 COMPANY_COLUMNS = [
     'ID', 'Company Name', 'Type', 'Email', 'Phone', 'Website',
-    'Location', 'Reference Link', 'Salary Range', 'Notes',
+    'Location', 'Reference', 'Salary Range', 'Notes',
     'Added Date', 'Last Updated'
 ]
 
@@ -86,7 +86,7 @@ class SheetsClient:
         company_type: Optional[str] = None,  # NEW
         salary: Optional[str] = None,  # NEW
         place: Optional[str] = None,  # NEW
-        reference_link: Optional[str] = None  # NEW
+        reference: Optional[str] = None  # NEW
     ) -> str:
         """Insert a new application row and return the application ID."""
 
@@ -113,7 +113,7 @@ class SheetsClient:
             company_type or "",  # NEW
             salary or "",  # NEW
             place or "",  # NEW
-            reference_link or ""  # NEW
+            reference or ""  # NEW
         ]
 
         self.service.spreadsheets().values().append(
@@ -230,6 +230,7 @@ class SheetsClient:
                 "company": row[1] if len(row) > 1 else "",
                 "email": row[2] if len(row) > 2 else "",
                 "position": row[3] if len(row) > 3 else "",
+                "language": language,
                 "status": status,
                 "sent_date": row[5] if len(row) > 5 else "",
                 "followups": int(row[6]) if len(row) > 6 and row[6] else 0,
@@ -242,7 +243,7 @@ class SheetsClient:
                 "type": row[13] if len(row) > 13 else "",  # NEW
                 "salary": row[14] if len(row) > 14 else "",  # NEW
                 "place": row[15] if len(row) > 15 else "",  # NEW
-                "reference_link": row[16] if len(row) > 16 else "",  # NEW
+                "reference": row[16] if len(row) > 16 else "",  # NEW
             })
 
         return applications
@@ -283,6 +284,7 @@ class SheetsClient:
                     "company": row[1] if len(row) > 1 else "",
                     "email": row[2] if len(row) > 2 else "",
                     "position": row[3] if len(row) > 3 else "",
+                    "language": language,
                     "status": row[4] if len(row) > 4 else "",
                     "sent_date": row[5] if len(row) > 5 else "",
                     "followups": row[6] if len(row) > 6 else "",
@@ -295,7 +297,7 @@ class SheetsClient:
                     "type": row[13] if len(row) > 13 else "",  # NEW
                     "salary": row[14] if len(row) > 14 else "",  # NEW
                     "place": row[15] if len(row) > 15 else "",  # NEW
-                    "reference_link": row[16] if len(row) > 16 else "",  # NEW
+                    "reference": row[16] if len(row) > 16 else "",  # NEW
                 }
 
         return None
@@ -355,7 +357,7 @@ class SheetsClient:
         company_type: Optional[str] = None,
         salary: Optional[str] = None,
         place: Optional[str] = None,
-        reference_link: Optional[str] = None,
+        reference: Optional[str] = None,
         status: Optional[str] = None
     ) -> bool:
         """Update application fields without creating a new row."""
@@ -383,8 +385,8 @@ class SheetsClient:
             updates.append({"range": f"{sheet_name}!O{row_index}", "values": [[salary]]})
         if place is not None:
             updates.append({"range": f"{sheet_name}!P{row_index}", "values": [[place]]})
-        if reference_link is not None:
-            updates.append({"range": f"{sheet_name}!Q{row_index}", "values": [[reference_link]]})
+        if reference is not None:
+            updates.append({"range": f"{sheet_name}!Q{row_index}", "values": [[reference]]})
 
         if updates:
             self.service.spreadsheets().values().batchUpdate(
@@ -406,7 +408,7 @@ class SheetsClient:
         phone: Optional[str] = None,
         website: Optional[str] = None,
         location: Optional[str] = None,
-        reference_link: Optional[str] = None,
+        reference: Optional[str] = None,
         salary_range: Optional[str] = None,
         notes: Optional[str] = None
     ) -> str:
@@ -422,7 +424,7 @@ class SheetsClient:
             phone or "",
             website or "",
             location or "",
-            reference_link or "",
+            reference or "",
             salary_range or "",
             notes or "",
             added_date,
@@ -462,7 +464,7 @@ class SheetsClient:
                     "phone": row[4] if len(row) > 4 else "",
                     "website": row[5] if len(row) > 5 else "",
                     "location": row[6] if len(row) > 6 else "",
-                    "reference_link": row[7] if len(row) > 7 else "",
+                    "reference": row[7] if len(row) > 7 else "",
                     "salary_range": row[8] if len(row) > 8 else "",
                     "notes": row[9] if len(row) > 9 else "",
                     "added_date": row[10] if len(row) > 10 else "",
@@ -499,7 +501,7 @@ class SheetsClient:
         phone: Optional[str] = None,
         website: Optional[str] = None,
         location: Optional[str] = None,
-        reference_link: Optional[str] = None,
+        reference: Optional[str] = None,
         salary_range: Optional[str] = None,
         notes: Optional[str] = None
     ) -> bool:
@@ -529,8 +531,8 @@ class SheetsClient:
             updates.append({"range": f"{SHEET_COMPANIES}!F{row_index}", "values": [[website]]})
         if location is not None:
             updates.append({"range": f"{SHEET_COMPANIES}!G{row_index}", "values": [[location]]})
-        if reference_link is not None:
-            updates.append({"range": f"{SHEET_COMPANIES}!H{row_index}", "values": [[reference_link]]})
+        if reference is not None:
+            updates.append({"range": f"{SHEET_COMPANIES}!H{row_index}", "values": [[reference]]})
         if salary_range is not None:
             updates.append({"range": f"{SHEET_COMPANIES}!I{row_index}", "values": [[salary_range]]})
         if notes is not None:
@@ -555,7 +557,7 @@ class SheetsClient:
         phone: Optional[str] = None,
         website: Optional[str] = None,
         location: Optional[str] = None,
-        reference_link: Optional[str] = None,
+        reference: Optional[str] = None,
         salary_range: Optional[str] = None,
         notes: Optional[str] = None
     ) -> Optional[str]:
@@ -577,7 +579,7 @@ class SheetsClient:
                 phone=phone or existing.get("phone", ""),
                 website=website or existing.get("website", ""),
                 location=location or existing.get("location", ""),
-                reference_link=reference_link or existing.get("reference_link", ""),
+                reference=reference or existing.get("reference", ""),
                 salary_range=salary_range or existing.get("salary_range", ""),
                 notes=notes or existing.get("notes", "")
             )
@@ -590,7 +592,7 @@ class SheetsClient:
             phone=phone,
             website=website,
             location=location,
-            reference_link=reference_link,
+            reference=reference,
             salary_range=salary_range,
             notes=notes
         )

@@ -57,7 +57,7 @@
                 <!-- Action Buttons -->
                 <div class="flex items-center space-x-2">
                     {% if company.email %}
-                    <a href="/send?company={{ company.name|urlencode }}&email={{ company.email|urlencode }}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}{% if company.location %}&place={{ company.location|urlencode }}{% endif %}{% if company.reference_link %}&reference_link={{ company.reference_link|urlencode }}{% endif %}{% if company.salary_range %}&salary={{ company.salary_range|urlencode }}{% endif %}{% if company.notes %}&notes={{ company.notes|urlencode }}{% endif %}"
+                    <a href="/send?company={{ company.name|urlencode }}&email={{ company.email|urlencode }}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}{% if company.location %}&place={{ company.location|urlencode }}{% endif %}{% if company.reference %}&reference={{ company.reference|urlencode }}{% endif %}{% if company.salary_range %}&salary={{ company.salary_range|urlencode }}{% endif %}{% if company.notes %}&notes={{ company.notes|urlencode }}{% endif %}"
                        class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all">
                         <i class="fas fa-paper-plane mr-2"></i>Send Application
                     </a>
@@ -164,17 +164,16 @@
                     </div>
                     {% endif %}
 
-                    {% if company.reference_link %}
+                    {% if company.reference %}
                     <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div class="bg-gray-100 p-2 rounded-lg">
                             <i class="fas fa-link text-gray-600"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs text-gray-500 uppercase tracking-wide">Reference Link</p>
-                            <a href="{{ company.reference_link }}" target="_blank"
-                               class="text-sm font-medium text-blue-600 hover:text-blue-800 break-all">
-                                {{ company.reference_link }}
-                            </a>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Reference</p>
+                            <p class="text-sm font-medium text-gray-900 break-all">
+                                {{ company.reference }}
+                            </p>
                         </div>
                     </div>
                     {% endif %}
@@ -236,7 +235,7 @@
                         Applications to {{ company.name }}
                     </h3>
                     {% if company.email %}
-                    <a href="/send?company={{ company.name }}&email={{ company.email }}{% if company.location %}&place={{ company.location|urlencode }}{% endif %}{% if company.reference_link %}&reference_link={{ company.reference_link|urlencode }}{% endif %}{% if company.salary_range %}&salary={{ company.salary_range|urlencode }}{% endif %}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}{% if company.notes %}&notes={{ company.notes|urlencode }}{% endif %}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    <a href="/send?company={{ company.name }}&email={{ company.email }}{% if company.location %}&place={{ company.location|urlencode }}{% endif %}{% if company.reference %}&reference={{ company.reference|urlencode }}{% endif %}{% if company.salary_range %}&salary={{ company.salary_range|urlencode }}{% endif %}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}{% if company.notes %}&notes={{ company.notes|urlencode }}{% endif %}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
                         <i class="fas fa-plus mr-1"></i>New Application
                     </a>
                     {% endif %}
@@ -273,7 +272,7 @@
                             </div>
                         </div>
 
-                        {% if app.place or app.salary or app.reference_link %}
+                        {% if app.place or app.salary or app.reference %}
                         <div class="flex flex-wrap gap-2 mt-3">
                             {% if app.place %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -287,11 +286,10 @@
                             </span>
                             {% endif %}
 
-                            {% if app.reference_link %}
-                            <a href="{{ app.reference_link }}" target="_blank"
-                               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 hover:bg-purple-200">
-                                <i class="fas fa-link mr-1"></i>Job Posting
-                            </a>
+                            {% if app.reference %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <i class="fas fa-link mr-1"></i>{{ app.reference }}
+                            </span>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -303,7 +301,7 @@
                     <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
                     <p class="text-gray-500 text-lg mb-2">No applications yet</p>
                     {% if company.email %}
-                    <a href="/send?company={{ company.name }}&email={{ company.email }}{% if company.location %}&place={{ company.location|urlencode }}{% endif %}{% if company.reference_link %}&reference_link={{ company.reference_link|urlencode }}{% endif %}{% if company.salary_range %}&salary={{ company.salary_range|urlencode }}{% endif %}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}{% if company.notes %}&notes={{ company.notes|urlencode }}{% endif %}"
+                    <a href="/send?company={{ company.name }}&email={{ company.email }}{% if company.location %}&place={{ company.location|urlencode }}{% endif %}{% if company.reference %}&reference={{ company.reference|urlencode }}{% endif %}{% if company.salary_range %}&salary={{ company.salary_range|urlencode }}{% endif %}{% if company.phone %}&phone={{ company.phone|urlencode }}{% endif %}{% if company.website %}&website={{ company.website|urlencode }}{% endif %}{% if company.type %}&company_type={{ company.type|urlencode }}{% endif %}{% if company.notes %}&notes={{ company.notes|urlencode }}{% endif %}"
                        class="text-blue-600 hover:text-blue-800 font-medium">
                         <i class="fas fa-paper-plane mr-1"></i>Send your first application
                     </a>

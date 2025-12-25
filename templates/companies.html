@@ -280,10 +280,10 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-link text-gray-400 mr-1"></i> Reference Link
+                                    <i class="fas fa-link text-gray-400 mr-1"></i> Reference
                                 </label>
-                                <input type="url" id="companyReferenceLink" name="reference_link"
-                                       placeholder="https://job-posting-link.com"
+                                <input type="text" id="companyReference" name="reference"
+                                       placeholder="Job reference, requisition ID, or source"
                                        class="form-input">
                             </div>
 
@@ -525,7 +525,7 @@ async function editCompany(id) {
             document.getElementById('companyLocation').value = company.location || '';
             document.getElementById('companyPhone').value = company.phone || '';
             document.getElementById('companyWebsite').value = company.website || '';
-            document.getElementById('companyReferenceLink').value = company.reference_link || '';
+            document.getElementById('companyReference').value = company.reference || '';
             document.getElementById('companySalaryRange').value = company.salary_range || '';
             document.getElementById('companyNotes').value = company.notes || '';
 
@@ -613,14 +613,12 @@ async function viewCompany(id) {
                             </div>
                         ` : ''}
 
-                        ${company.reference_link ? `
+                        ${company.reference ? `
                             <div class="mb-4">
-                                <p class="text-sm font-medium text-gray-500">Reference Link</p>
+                                <p class="text-sm font-medium text-gray-500">Reference</p>
                                 <p class="mt-1 text-base text-gray-900">
                                     <i class="fas fa-link text-gray-400 mr-2"></i>
-                                    <a href="${escapeHtml(company.reference_link)}" target="_blank" class="text-blue-600 hover:text-blue-800">
-                                        ${escapeHtml(company.reference_link)}
-                                    </a>
+                                    ${escapeHtml(company.reference)}
                                 </p>
                             </div>
                         ` : ''}

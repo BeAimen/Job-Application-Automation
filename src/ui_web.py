@@ -186,7 +186,8 @@ async def send_page(
     email: Optional[str] = None,
     phone: Optional[str] = None,
     website: Optional[str] = None,
-    company_type: Optional[str] = None
+    company_type: Optional[str] = None,
+    reference: Optional[str] = None
 ):
     sheets_client, _, attachment_selector = get_clients()
     template_manager = get_template_manager()
@@ -268,7 +269,7 @@ async def send_page(
 
     prefill_place = query.get('place') or ''
     prefill_salary = query.get('salary') or ''
-    prefill_reference_link = query.get('reference_link') or ''
+    prefill_reference = reference or query.get('reference') or ''
     prefill_notes = query.get('notes') or ''
 
     return templates.TemplateResponse(
@@ -299,7 +300,7 @@ async def send_page(
             "prefill_body_fr": prefill_body_fr,
             "prefill_place": prefill_place,
             "prefill_salary": prefill_salary,
-            "prefill_reference_link": prefill_reference_link,
+            "prefill_reference": prefill_reference,
             "prefill_notes": prefill_notes,
             "companies": companies
         }
@@ -325,7 +326,7 @@ async def send_application(
         company_type: Optional[str] = Form(None),
         salary: Optional[str] = Form(None),
         place: Optional[str] = Form(None),
-        reference_link: Optional[str] = Form(None)
+        reference: Optional[str] = Form(None)
 ):
     sheets_client, mailer, attachment_selector = get_clients()
 
@@ -362,7 +363,7 @@ async def send_application(
     notes_value = clean_optional(notes)
     salary_value = clean_optional(salary)
     place_value = clean_optional(place)
-    reference_link_value = clean_optional(reference_link)
+    reference_value = clean_optional(reference)
 
     # Ensure company data is captured/updated in Companies sheet when provided
     try:
@@ -374,7 +375,7 @@ async def send_application(
                 phone=phone_value,
                 website=website_value,
                 location=place_value,
-                reference_link=reference_link_value,
+                reference=reference_value,
                 salary_range=salary_value,
                 notes=notes_value
             )
@@ -445,7 +446,7 @@ async def send_application(
                         company_type=company_type_value,
                         salary=salary_value,
                         place=place_value,
-                        reference_link=reference_link_value,
+                        reference=reference_value,
                         status='Pending'
                     )
                     if not updated:
@@ -463,7 +464,7 @@ async def send_application(
                         company_type=company_type_value,
                         salary=salary_value,
                         place=place_value,
-                        reference_link=reference_link_value
+                        reference=reference_value
                     )
 
                 final_body = substitute_placeholders(
@@ -851,7 +852,7 @@ async def create_company(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         location: Optional[str] = Form(None),
-        reference_link: Optional[str] = Form(None),
+        reference: Optional[str] = Form(None),
         salary_range: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
@@ -866,7 +867,7 @@ async def create_company(
             phone=phone,
             website=website,
             location=location,
-            reference_link=reference_link,
+            reference=reference,
             salary_range=salary_range,
             notes=notes
         )
@@ -921,7 +922,7 @@ async def update_company(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         location: Optional[str] = Form(None),
-        reference_link: Optional[str] = Form(None),
+        reference: Optional[str] = Form(None),
         salary_range: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
@@ -937,7 +938,7 @@ async def update_company(
             phone=phone,
             website=website,
             location=location,
-            reference_link=reference_link,
+            reference=reference,
             salary_range=salary_range,
             notes=notes
         )
@@ -1078,6 +1079,47 @@ async def monitoring_page(request: Request):
             "sheets_quota_percent": round(sheets_quota_percent, 1)
         }
     )
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    """Settings management page."""
+    current_settings = settings_manager.get_all_settings()
+    return templates.TemplateResponse(
+        "settings.html",
+        {
+            "request": request,
+            "settings": current_settings
+        }
+    )
+
+
+@app.post("/api/settings/save")
+async def save_settings(
+    default_language: str = Form(...),
+    followup_days: int = Form(...),
+    timezone: str = Form(...),
+    email_delay: int = Form(...),
+    max_retries: int = Form(...),
+    auto_followup: Optional[bool] = Form(False)
+):
+    """Persist user settings."""
+    updates = {
+        "default_language": default_language,
+        "followup_days": followup_days,
+        "timezone": timezone,
+        "email_delay": email_delay,
+        "max_retries": max_retries,
+        "auto_followup": bool(auto_followup),
+    }
+
+    try:
+        success = settings_manager.update_settings(updates)
+        if success:
+            return JSONResponse(content={"success": True})
+        return JSONResponse(content={"success": False, "error": "Failed to save settings"}, status_code=500)
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
 
 
 @app.get("/status/{app_id}", response_class=HTMLResponse)
