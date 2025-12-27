@@ -89,6 +89,6 @@ def test_column_order():
     expected = [
         'ID', 'Company', 'Email', 'Position', 'Status', 'Sent Date',
         'Followups', 'Next Followup Date', 'Phone Number', 'Website',
-        'Body', 'CV', 'Notes'
+        'Body', 'CV', 'Notes', 'Type', 'Salary', 'Place', 'Reference'
     ]
     assert APPLICATION_COLUMNS == expected

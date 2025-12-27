@@ -32,7 +32,7 @@ class SettingsManager:
         return {
             'default_language': 'en',
             'followup_days': 7,
-            'timezone': 'UTC',
+            'timezone': 'Europe/Paris',
             'email_delay': 2,
             'max_retries': 3,
             'auto_followup': False

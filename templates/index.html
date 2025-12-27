@@ -150,7 +150,7 @@
                         <p class="text-sm font-medium text-gray-900">Email sent</p>
                         <p class="text-xs text-gray-500">to {{ app.company }}</p>
                         <p class="text-xs text-gray-400 mt-1">
-                            {{ app.sent_date[11:16] if app.sent_date and len(app.sent_date) > 16 else 'N/A' }}
+                            {{ app.display_sent if app.display_sent else 'N/A' }}
                         </p>
                     </div>
                 </div>
@@ -195,7 +195,8 @@
                 {% for app in recent_applications %}
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="table-cell">
-                        {% if app.get('language') == 'en' or 'Applications_EN' in app.get('sheet', '') %}
+                        {% set lang_code = (app.get('language') or '')|lower %}
+                        {% if lang_code == 'en' or 'Applications_EN' in app.get('sheet', '') %}
                         <span class="lang-badge lang-badge-en lang-icon-en">EN</span>
                         {% else %}
                         <span class="lang-badge lang-badge-fr lang-icon-fr">FR</span>
@@ -219,10 +220,10 @@
                         </span>
                     </td>
                     <td class="table-cell text-sm text-gray-500">
-                        {{ app.sent_date[:10] if app.sent_date else 'N/A' }}
+                        {{ app.display_sent if app.display_sent else 'N/A' }}
                     </td>
                     <td class="table-cell">
-                        <a href="/status/{{ app.id }}?lang=en" class="text-blue-600 hover:text-blue-800 text-sm">
+                        <a href="/status/{{ app.id }}?lang={{ lang_code or 'en' }}" class="text-blue-600 hover:text-blue-800 text-sm">
                             <i class="fas fa-eye"></i>
                         </a>
                     </td>

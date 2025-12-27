@@ -27,7 +27,8 @@ from src.attachments import AttachmentSelector
 from src.followup import FollowupEngine
 from src.utils import (
     validate_email, get_default_body, get_default_position,
-    substitute_placeholders, is_followup_due
+    substitute_placeholders, is_followup_due, get_default_company,
+    format_timestamp
 )
 from src.analytics import AnalyticsEngine
 from src.templates_manager import TemplateManager
@@ -102,17 +103,22 @@ async def home(request: Request):
     analytics = get_analytics()
 
     try:
+        tz_name = settings_manager.get_setting('timezone', 'UTC')
         # Get all applications
         apps_en = sheets_client.get_applications_for_followup('en')
         apps_fr = sheets_client.get_applications_for_followup('fr')
         all_apps = apps_en + apps_fr
 
+        def annotate_apps(apps):
+            for app in apps:
+                app['display_sent'] = format_timestamp(app.get('sent_date'), tz_name)
+            return apps
+
         # Calculate real stats
         total_applications = len(all_apps)
 
         # Sent today (use timezone from settings)
-        timezone = settings_manager.get_setting('timezone', 'UTC')
-        tz = pytz.timezone(timezone)
+        tz = pytz.timezone(tz_name)
         today = datetime.now(tz).date()
         sent_today = sum(1 for app in all_apps
                          if app.get('sent_date') and
@@ -138,16 +144,18 @@ async def home(request: Request):
         company_heatmap = analytics.get_company_heatmap(5)
 
         # Today's activity (real)
-        today_apps = [app for app in all_apps
-                      if app.get('sent_date') and
-                      datetime.fromisoformat(app['sent_date']).date() == today]
+        today_apps = annotate_apps([
+            app for app in all_apps
+            if app.get('sent_date') and
+            datetime.fromisoformat(app['sent_date']).date() == today
+        ])
 
         # Recent applications
-        recent_applications = sorted(
+        recent_applications = annotate_apps(sorted(
             all_apps,
             key=lambda x: x.get('sent_date', ''),
             reverse=True
-        )[:10]
+        )[:10])
 
     except Exception as e:
         print(f"Error loading dashboard data: {e}")
@@ -186,10 +194,16 @@ async def send_page(
     email: Optional[str] = None,
     phone: Optional[str] = None,
     website: Optional[str] = None,
-    company_type: Optional[str] = None
+    company_type: Optional[str] = None,
+    reference: Optional[str] = None
 ):
-    _, _, attachment_selector = get_clients()
+    sheets_client, _, attachment_selector = get_clients()
     template_manager = get_template_manager()
+
+    try:
+        companies = sheets_client.get_all_companies()
+    except Exception:
+        companies = []
 
     # Get available attachments
     attachments_en = [f.name for f in attachment_selector.get_attachments('en')]
@@ -263,7 +277,7 @@ async def send_page(
 
     prefill_place = query.get('place') or ''
     prefill_salary = query.get('salary') or ''
-    prefill_reference_link = query.get('reference_link') or ''
+    prefill_reference = reference or query.get('reference') or ''
     prefill_notes = query.get('notes') or ''
 
     return templates.TemplateResponse(
@@ -294,8 +308,9 @@ async def send_page(
             "prefill_body_fr": prefill_body_fr,
             "prefill_place": prefill_place,
             "prefill_salary": prefill_salary,
-            "prefill_reference_link": prefill_reference_link,
-            "prefill_notes": prefill_notes
+            "prefill_reference": prefill_reference,
+            "prefill_notes": prefill_notes,
+            "companies": companies
         }
     )
 
@@ -319,12 +334,18 @@ async def send_application(
         company_type: Optional[str] = Form(None),
         salary: Optional[str] = Form(None),
         place: Optional[str] = Form(None),
-        reference_link: Optional[str] = Form(None)
+        reference: Optional[str] = Form(None)
 ):
     sheets_client, mailer, attachment_selector = get_clients()
 
     if not mailer:
         raise HTTPException(status_code=500, detail="Gmail service not available")
+
+    def clean_optional(value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        value = value.strip()
+        return value if value else None
 
     # Parse emails (support newline-separated lists)
     email_list = [e.strip() for e in emails.replace('\n', ',').split(',') if e.strip()]
@@ -343,6 +364,32 @@ async def send_application(
     # Process languages
     languages = ['en', 'fr'] if language == 'both' else [language]
 
+    company_name = clean_optional(company)
+    company_type_value = clean_optional(company_type)
+    phone_value = clean_optional(phone)
+    website_value = clean_optional(website)
+    notes_value = clean_optional(notes)
+    salary_value = clean_optional(salary)
+    place_value = clean_optional(place)
+    reference_value = clean_optional(reference)
+
+    # Ensure company data is captured/updated in Companies sheet when provided
+    try:
+        if company_name:
+            sheets_client.upsert_company_from_application(
+                company_name=company_name,
+                emails=email_list,
+                company_type=company_type_value,
+                phone=phone_value,
+                website=website_value,
+                location=place_value,
+                reference=reference_value,
+                salary_range=salary_value,
+                notes=notes_value
+            )
+    except Exception as e:
+        print(f"[WARN] Failed to upsert company from send form: {e}")
+
     results = []
 
     for lang in languages:
@@ -354,6 +401,8 @@ async def send_application(
 
         if not final_position:
             final_position = get_default_position(lang)
+
+        final_company = company_name or get_default_company(lang)
 
         # Get body
         if language == 'both':
@@ -390,24 +439,45 @@ async def send_application(
         # Send to each recipient
         for recipient_email in email_list:
             try:
-                app_id = sheets_client.add_application(
-                    email=recipient_email,
-                    language=lang,
-                    company=company,
-                    position=final_position,
-                    phone=phone,
-                    website=website,
-                    notes=notes,
-                    status='Pending',
-                    company_type=company_type,
-                    salary=salary,
-                    place=place,
-                    reference_link=reference_link
-                )
+                existing_app = sheets_client.find_application_by_email(recipient_email, lang)
+
+                if existing_app:
+                    app_id = existing_app["id"]
+                    updated = sheets_client.update_application_fields(
+                        app_id=app_id,
+                        language=lang,
+                        company=final_company,
+                        position=final_position,
+                        phone=phone_value,
+                        website=website_value,
+                        notes=notes_value,
+                        company_type=company_type_value,
+                        salary=salary_value,
+                        place=place_value,
+                        reference=reference_value,
+                        status='Pending'
+                    )
+                    if not updated:
+                        raise ValueError("Failed to update existing application row")
+                else:
+                    app_id = sheets_client.add_application(
+                        email=recipient_email,
+                        language=lang,
+                        company=final_company,
+                        position=final_position,
+                        phone=phone_value,
+                        website=website_value,
+                        notes=notes_value,
+                        status='Pending',
+                        company_type=company_type_value,
+                        salary=salary_value,
+                        place=place_value,
+                        reference=reference_value
+                    )
 
                 final_body = substitute_placeholders(
                     final_body_template,
-                    company,
+                    final_company,
                     final_position,
                     lang
                 )
@@ -790,6 +860,8 @@ async def create_company(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         location: Optional[str] = Form(None),
+        reference: Optional[str] = Form(None),
+        salary_range: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
     """Create a new company and return the created company object."""
@@ -803,6 +875,8 @@ async def create_company(
             phone=phone,
             website=website,
             location=location,
+            reference=reference,
+            salary_range=salary_range,
             notes=notes
         )
 
@@ -856,6 +930,8 @@ async def update_company(
         phone: Optional[str] = Form(None),
         website: Optional[str] = Form(None),
         location: Optional[str] = Form(None),
+        reference: Optional[str] = Form(None),
+        salary_range: Optional[str] = Form(None),
         notes: Optional[str] = Form(None)
 ):
     """Update an existing company."""
@@ -870,6 +946,8 @@ async def update_company(
             phone=phone,
             website=website,
             location=location,
+            reference=reference,
+            salary_range=salary_range,
             notes=notes
         )
 
@@ -957,6 +1035,7 @@ async def monitoring_page(request: Request):
     sheets_client, mailer, _ = get_clients()
 
     try:
+        tz_name = settings_manager.get_setting('timezone', 'UTC')
         # Get real API usage
         apps_en = sheets_client.get_applications_for_followup('en')
         apps_fr = sheets_client.get_applications_for_followup('fr')
@@ -993,6 +1072,14 @@ async def monitoring_page(request: Request):
     gmail_stats = system_monitor.get_api_stats('gmail', 60)
     sheets_stats = system_monitor.get_api_stats('sheets', 60)
 
+    status_messages = {
+        'healthy': 'All services operational',
+        'warning': 'Some warnings detected',
+        'critical': 'Attention required',
+    }
+    status_message = status_messages.get(health.get('status'), 'Status unknown')
+    last_checked = format_timestamp(datetime.now().isoformat(), tz_name)
+
     return templates.TemplateResponse(
         "monitoring.html",
         {
@@ -1006,9 +1093,52 @@ async def monitoring_page(request: Request):
             "gmail_quota_percent": round(gmail_quota_percent, 1),
             "sheets_quota_used": sheets_operations_today,
             "sheets_quota_total": sheets_quota_total,
-            "sheets_quota_percent": round(sheets_quota_percent, 1)
+            "sheets_quota_percent": round(sheets_quota_percent, 1),
+            "status_message": status_message,
+            "last_checked": last_checked
         }
     )
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    """Settings management page."""
+    current_settings = settings_manager.get_all_settings()
+    return templates.TemplateResponse(
+        "settings.html",
+        {
+            "request": request,
+            "settings": current_settings
+        }
+    )
+
+
+@app.post("/api/settings/save")
+async def save_settings(
+    default_language: str = Form(...),
+    followup_days: int = Form(...),
+    timezone: str = Form(...),
+    email_delay: int = Form(...),
+    max_retries: int = Form(...),
+    auto_followup: Optional[bool] = Form(False)
+):
+    """Persist user settings."""
+    updates = {
+        "default_language": default_language,
+        "followup_days": followup_days,
+        "timezone": timezone,
+        "email_delay": email_delay,
+        "max_retries": max_retries,
+        "auto_followup": bool(auto_followup),
+    }
+
+    try:
+        success = settings_manager.update_settings(updates)
+        if success:
+            return JSONResponse(content={"success": True})
+        return JSONResponse(content={"success": False, "error": "Failed to save settings"}, status_code=500)
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
 
 
 @app.get("/status/{app_id}", response_class=HTMLResponse)

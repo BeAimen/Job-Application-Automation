@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from collections import deque
 import pytz
 from src.config import TIMEZONE
+from settings_manager import settings_manager
+from src.utils import get_active_timezone
 
 
 class SystemMonitor:
@@ -14,8 +16,9 @@ class SystemMonitor:
         }
 
     def log_event(self, event_type: str, severity: str, message: str, details: Dict = None):
+        tz = get_active_timezone()
         event = {
-            'timestamp': datetime.now(pytz.timezone(TIMEZONE)).isoformat(),
+            'timestamp': datetime.now(tz).isoformat(),
             'type': event_type,
             'severity': severity,  # info, warning, error, critical
             'message': message,
@@ -24,8 +27,9 @@ class SystemMonitor:
         self.events.append(event)
 
     def log_api_call(self, api: str, endpoint: str, success: bool, duration_ms: float):
+        tz = get_active_timezone()
         call = {
-            'timestamp': datetime.now(pytz.timezone(TIMEZONE)).isoformat(),
+            'timestamp': datetime.now(tz).isoformat(),
             'endpoint': endpoint,
             'success': success,
             'duration_ms': duration_ms
@@ -41,7 +45,7 @@ class SystemMonitor:
         return events[-limit:]
 
     def get_api_stats(self, api: str, minutes: int = 60) -> Dict[str, Any]:
-        cutoff = datetime.now(pytz.timezone(TIMEZONE)) - timedelta(minutes=minutes)
+        cutoff = datetime.now(get_active_timezone()) - timedelta(minutes=minutes)
 
         calls = list(self.api_calls.get(api, []))
         recent_calls = [
