@@ -55,9 +55,13 @@ SHEET_COMPANIES = os.getenv('SHEET_COMPANIES', 'Companies')
 # EMAIL CONFIGURATION
 # ---------------------------------------------------------
 GMAIL_USER_EMAIL = os.getenv('GMAIL_USER_EMAIL', '')
+GMAIL_DISPLAY_NAME = os.getenv('GMAIL_DISPLAY_NAME', 'Aimen Berkane')
+
+SENDER_PHONE = os.getenv('SENDER_PHONE', '')
+SENDER_LINKEDIN = os.getenv('SENDER_LINKEDIN', '')
 
 DEFAULT_DELAY_BETWEEN_EMAILS = int(
-    os.getenv('DEFAULT_DELAY_BETWEEN_EMAILS', '2')
+    os.getenv('DEFAULT_DELAY_BETWEEN_EMAILS', '5')
 )
 
 MAX_RETRIES = int(os.getenv('MAX_RETRIES', '3'))
@@ -104,6 +108,10 @@ Thank you for your time and consideration.
 
 Sincerely,  
 Aimen Berkane
+Instrumentation & Control Engineer
+Email: beaimen101@gmail.com
+Phone: 0542432015 | 0674969146
+LinkedIn: linkedin.com/in/aimenberkane
 '''
     },
 
@@ -126,6 +134,10 @@ Je vous remercie par avance pour l'attention portée à ma candidature.
 
 Cordialement,  
 Aimen Berkane
+Ingénieur Instrumentation & Contrôle
+Email: beaimen101@gmail.com
+Phone: 0542432015 | 0674969146
+LinkedIn: linkedin.com/in/aimenberkane
 '''
     }
 }
