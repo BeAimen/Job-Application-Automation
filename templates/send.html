@@ -4,252 +4,308 @@
 
 {% block content %}
 <div class="px-4 py-6 sm:px-0">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Send Application</h1>
+    <!-- Enhanced Header -->
+    <div class="mb-8">
+        <div class="flex items-center space-x-3 mb-2">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <i class="fas fa-paper-plane text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Send Application</h1>
+                <p class="text-sm text-gray-500 mt-1">Send professional job applications with ease</p>
+            </div>
+        </div>
+    </div>
 
-    <div class="bg-white shadow-lg rounded-2xl p-6 max-w-5xl mx-auto relative overflow-hidden">
-        <form id="sendForm" class="space-y-8" novalidate>
+    <div class="bg-white shadow-xl rounded-2xl overflow-hidden max-w-5xl mx-auto border border-gray-100">
+        <form id="sendForm" class="space-y-0" novalidate>
 
             <!-- Smart Intake -->
-            <section aria-labelledby="intakeHeading" class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 id="intakeHeading" class="text-lg font-semibold text-gray-900">Smart Intake</h2>
-                    <div class="text-sm text-gray-600" id="recipientSummary">Will send 0 emails</div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4 items-start">
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Recipients <span class="text-red-500">*</span></label>
-                        <textarea
-                            id="emailsInput"
-                            name="emails"
-                            rows="3"
-                            required
-                            aria-required="true"
-                            placeholder="hr@company.com&#10;talent@company.com"
-                            class="form-input border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all w-full resize-y"
-                        >{{ prefill_email or '' }}</textarea>
-                        <div class="flex items-center text-xs text-gray-600 space-x-3" id="emailCounters">
-                            <span><i class="fas fa-check text-green-500 mr-1"></i><span id="validCount">0</span> valid</span>
-                            <span><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span id="duplicateCount">0</span> duplicates removed</span>
-                            <span><i class="fas fa-times text-red-500 mr-1"></i><span id="invalidCount">0</span> invalid</span>
+            <section aria-labelledby="intakeHeading" class="border-b border-gray-100">
+                <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 id="intakeHeading" class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-inbox text-blue-600 mr-3"></i>
+                            Smart Intake
+                        </h2>
+                        <div class="text-sm font-medium text-gray-700 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200" id="recipientSummary">
+                            <i class="fas fa-users text-gray-500 mr-2"></i>Will send 0 emails
                         </div>
                     </div>
+                </div>
 
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Company (optional)</label>
-                        <div class="flex items-center space-x-2">
-                            <input
-                                type="text"
-                                name="company"
-                                id="companyInput"
-                                list="companySuggestions"
-                                placeholder="Search or type a company"
-                                value="{{ prefill_company or '' }}"
-                                class="form-input w-full"
-                            />
-                            <button type="button" id="applyCompanyBtn" class="btn-secondary whitespace-nowrap">
-                                <i class="fas fa-magic mr-1"></i> Apply details
-                            </button>
+                <div class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-4 items-start">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Recipients <span class="text-red-500">*</span></label>
+                            <textarea
+                                id="emailsInput"
+                                name="emails"
+                                rows="3"
+                                required
+                                aria-required="true"
+                                placeholder="hr@company.com&#10;talent@company.com"
+                                class="form-input border-2 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all w-full resize-y"
+                            >{{ prefill_email or '' }}</textarea>
+                            <div class="flex items-center text-xs text-gray-600 space-x-3" id="emailCounters">
+                                <span><i class="fas fa-check text-green-500 mr-1"></i><span id="validCount">0</span> valid</span>
+                                <span><i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i><span id="duplicateCount">0</span> duplicates removed</span>
+                                <span><i class="fas fa-times text-red-500 mr-1"></i><span id="invalidCount">0</span> invalid</span>
+                            </div>
                         </div>
-                        <datalist id="companySuggestions">
-                            {% for c in companies %}
-                            <option value="{{ c.name }}"></option>
-                            {% endfor %}
-                        </datalist>
-                        <p class="text-xs text-gray-500" id="companyStatus">Selecting is optional. Apply to prefill details.</p>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Company</label>
+                            <div class="flex items-center space-x-2">
+                                <input
+                                    type="text"
+                                    name="company"
+                                    id="companyInput"
+                                    list="companySuggestions"
+                                    placeholder="Search or type a company"
+                                    value="{{ prefill_company or '' }}"
+                                    class="form-input w-full"
+                                />
+                                <button type="button" id="applyCompanyBtn" class="btn-secondary whitespace-nowrap">
+                                    <i class="fas fa-magic mr-1"></i> Apply details
+                                </button>
+                            </div>
+                            <datalist id="companySuggestions">
+                                {% for c in companies %}
+                                <option value="{{ c.name }}"></option>
+                                {% endfor %}
+                            </datalist>
+                            <p class="text-xs text-gray-500" id="companyStatus">Selecting is optional. Apply to prefill details.</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- Language Mode -->
-            <section aria-labelledby="languageHeading" class="space-y-3">
-                <h2 id="languageHeading" class="text-lg font-semibold text-gray-900">Language Mode</h2>
-                <fieldset class="grid grid-cols-1 md:grid-cols-3 gap-3" role="radiogroup" aria-label="Language selection">
-                    <label class="cursor-pointer block">
-                        <input type="radio" name="language" value="en"
-                               {% if default_language == 'en' %}checked{% endif %}
-                               onchange="handleLanguageChange(this.value)"
-                               class="peer sr-only">
-                        <div class="p-4 border-2 rounded-lg transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="font-semibold text-gray-900">English</span>
-                                <span class="text-xs text-gray-500">1 email</span>
-                            </div>
-                            <p class="text-xs text-gray-600">Uses English body and CV.</p>
-                        </div>
-                    </label>
+            <section aria-labelledby="languageHeading" class="border-b border-gray-100">
+                <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <h2 id="languageHeading" class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-language text-green-600 mr-3"></i>
+                        Language Mode
+                    </h2>
+                </div>
 
-                    <label class="cursor-pointer block">
-                        <input type="radio" name="language" value="fr"
-                               {% if default_language == 'fr' %}checked{% endif %}
-                               onchange="handleLanguageChange(this.value)"
-                               class="peer sr-only">
-                        <div class="p-4 border-2 rounded-lg transition-all peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="font-semibold text-gray-900">French</span>
-                                <span class="text-xs text-gray-500">1 email</span>
+                <div class="p-6">
+                    <fieldset class="grid grid-cols-1 md:grid-cols-3 gap-4" role="radiogroup" aria-label="Language selection">
+                        <label class="cursor-pointer block group">
+                            <input type="radio" name="language" value="en"
+                                   {% if default_language == 'en' %}checked{% endif %}
+                                   onchange="handleLanguageChange(this.value)"
+                                   class="peer sr-only">
+                            <div class="relative p-5 border-2 rounded-xl transition-all duration-200
+                                        peer-checked:border-blue-500 peer-checked:bg-gradient-to-br peer-checked:from-blue-50 peer-checked:to-blue-100
+                                        peer-checked:shadow-lg peer-checked:scale-[1.02]
+                                        hover:border-blue-300 hover:shadow-md border-gray-200 bg-white">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                                            <i class="fas fa-flag-usa text-blue-500 group-hover:text-white transition-colors"></i>
+                                        </div>
+                                        <span class="font-bold text-gray-900 text-lg">English</span>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">1 email</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Uses English body and CV for professional communications.</p>
+                                <div class="absolute top-3 right-3 w-5 h-5 border-2 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 border-gray-300 hidden peer-checked:flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
                             </div>
-                            <p class="text-xs text-gray-600">Uses French body and CV.</p>
-                        </div>
-                    </label>
+                        </label>
 
-                    <label class="cursor-pointer block">
-                        <input type="radio" name="language" value="both"
-                               {% if default_language == 'both' %}checked{% endif %}
-                               onchange="handleLanguageChange(this.value)"
-                               class="peer sr-only">
-                        <div class="p-4 border-2 rounded-lg transition-all peer-checked:border-gray-500 peer-checked:bg-gray-50 hover:border-gray-300 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="font-semibold text-gray-900">Both</span>
-                                <span class="text-xs text-gray-500">2 emails</span>
+                        <label class="cursor-pointer block group">
+                            <input type="radio" name="language" value="fr"
+                                   {% if default_language == 'fr' %}checked{% endif %}
+                                   onchange="handleLanguageChange(this.value)"
+                                   class="peer sr-only">
+                            <div class="relative p-5 border-2 rounded-xl transition-all duration-200
+                                        peer-checked:border-purple-500 peer-checked:bg-gradient-to-br peer-checked:from-purple-50 peer-checked:to-purple-100
+                                        peer-checked:shadow-lg peer-checked:scale-[1.02]
+                                        hover:border-purple-300 hover:shadow-md border-gray-200 bg-white">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-500 transition-colors">
+                                            <i class="fas fa-flag text-purple-500 group-hover:text-white transition-colors"></i>
+                                        </div>
+                                        <span class="font-bold text-gray-900 text-lg">French</span>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">1 email</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Uses French body and CV for professional communications.</p>
+                                <div class="absolute top-3 right-3 w-5 h-5 border-2 rounded-full peer-checked:border-purple-500 peer-checked:bg-purple-500 border-gray-300 hidden peer-checked:flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
                             </div>
-                            <p class="text-xs text-gray-600">Sends EN + FR with their own CVs.</p>
-                        </div>
-                    </label>
-                </fieldset>
+                        </label>
+
+                        <label class="cursor-pointer block group">
+                            <input type="radio" name="language" value="both"
+                                   {% if default_language == 'both' %}checked{% endif %}
+                                   onchange="handleLanguageChange(this.value)"
+                                   class="peer sr-only">
+                            <div class="relative p-5 border-2 rounded-xl transition-all duration-200
+                                        peer-checked:border-gray-500 peer-checked:bg-gradient-to-br peer-checked:from-gray-50 peer-checked:to-gray-100
+                                        peer-checked:shadow-lg peer-checked:scale-[1.02]
+                                        hover:border-gray-400 hover:shadow-md border-gray-200 bg-white">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-400 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-globe text-white"></i>
+                                        </div>
+                                        <span class="font-bold text-gray-900 text-lg">Both</span>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">2 emails</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Sends both EN + FR with their respective CVs.</p>
+                                <div class="absolute top-3 right-3 w-5 h-5 border-2 rounded-full peer-checked:border-gray-500 peer-checked:bg-gray-500 border-gray-300 hidden peer-checked:flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs"></i>
+                                </div>
+                            </div>
+                        </label>
+                    </fieldset>
+                </div>
             </section>
 
-            <!-- Adaptive Composer -->
-            <section aria-labelledby="composerHeading" class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 id="composerHeading" class="text-lg font-semibold text-gray-900">Compose</h2>
-                    <div id="readinessStrip" class="text-xs text-gray-600"></div>
-                </div>
-
-                <!-- Tab controls for dual language -->
-                <div id="languageTabs" class="hidden border-b border-gray-200 mb-2">
-                    <nav class="-mb-px flex space-x-4" aria-label="Language tabs">
-                        <button type="button" class="lang-tab active" data-lang="en">English</button>
-                        <button type="button" class="lang-tab" data-lang="fr">French</button>
-                    </nav>
-                </div>
-
-                <!-- Single composer -->
-                <div id="composerSingle" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                            <input
-                                type="text"
-                                name="position"
-                                id="positionSingleInput"
-                                value="{{ prefill_position or default_position_en }}"
-                                placeholder="Software Engineer, Data Analyst..."
-                                class="form-input w-full"
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Attachment (CV)</label>
-                            <select name="attachment" required class="form-input w-full" id="attachmentSelect" aria-required="true">
-                                {% for att in attachments_en %}
-                                <option value="{{ att }}"
-                                    {% if prefill_attachment and att == prefill_attachment %}selected
-                                    {% elif not prefill_attachment and loop.first %}selected{% endif %}
-                                >{{ att }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Body</label>
-                        <textarea
-                            name="body"
-                            id="bodySingleInput"
-                            rows="8"
-                            class="form-input w-full"
-                        >{{ prefill_body or default_body_en }}</textarea>
-                        <p class="mt-1 text-xs text-gray-500">Placeholders: <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code>, <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code></p>
+            <!-- Compose -->
+            <section aria-labelledby="composerHeading" class="border-b border-gray-100">
+                <div class="px-6 py-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 id="composerHeading" class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-edit text-yellow-600 mr-3"></i>
+                            Compose
+                        </h2>
+                        <div id="readinessStrip" class="text-xs font-medium text-gray-700 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200"></div>
                     </div>
                 </div>
 
-                <!-- Dual composer -->
-                <div id="composerDual" class="hidden">
-                    <div class="language-pane" data-lang-pane="en">
+                <div class="p-6 space-y-4">
+                    <!-- Tabs -->
+                    <div id="languageTabs" class="hidden border-b border-gray-200 mb-4 bg-gray-50 rounded-t-lg p-2">
+                        <nav class="-mb-px flex space-x-2" aria-label="Language tabs">
+                            <button type="button" class="lang-tab active flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200" data-lang="en">
+                                <i class="fas fa-flag-usa mr-2"></i>English
+                            </button>
+                            <button type="button" class="lang-tab flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200" data-lang="fr">
+                                <i class="fas fa-flag mr-2"></i>French
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Single composer -->
+                    <div id="composerSingle" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Position (EN)</label>
-                                <input
-                                    type="text"
-                                    name="position_en"
-                                    id="positionEnInput"
-                                    value="{{ prefill_position_en or default_position_en }}"
-                                    class="form-input w-full"
-                                />
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                                <input type="text" name="position" id="positionSingleInput"
+                                       value="{{ prefill_position or default_position_en }}"
+                                       placeholder="Software Engineer, Data Analyst..."
+                                       class="form-input w-full" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Attachment (EN)</label>
-                                <select name="attachment_en" required class="form-input w-full" id="attachmentEnSelect">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Attachment (CV)</label>
+                                <select name="attachment" required class="form-input w-full" id="attachmentSelect" aria-required="true">
                                     {% for att in attachments_en %}
                                     <option value="{{ att }}"
-                                        {% if prefill_attachment_en and att == prefill_attachment_en %}selected
-                                        {% elif not prefill_attachment_en and loop.first %}selected{% endif %}
+                                        {% if prefill_attachment and att == prefill_attachment %}selected
+                                        {% elif not prefill_attachment and loop.first %}selected{% endif %}
                                     >{{ att }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Body (EN)</label>
-                            <textarea
-                                name="body_en"
-                                id="bodyEnInput"
-                                rows="8"
-                                class="form-input w-full"
-                            >{{ prefill_body_en or default_body_en }}</textarea>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Body</label>
+                            <textarea name="body" id="bodySingleInput" rows="8" class="form-input w-full">{{ prefill_body or default_body_en }}</textarea>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Placeholders:
+                                <code class="bg-gray-100 px-2 py-1 rounded">[Company]</code>,
+                                <code class="bg-gray-100 px-2 py-1 rounded">[Position]</code>
+                            </p>
                         </div>
                     </div>
 
-                    <div class="language-pane hidden" data-lang-pane="fr">
-                        <div class="grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Position (FR)</label>
-                                <input
-                                    type="text"
-                                    name="position_fr"
-                                    id="positionFrInput"
-                                    value="{{ prefill_position_fr or default_position_fr }}"
-                                    class="form-input w-full"
-                                />
+                    <!-- Dual composer -->
+                    <div id="composerDual" class="hidden">
+                        <div class="language-pane" data-lang-pane="en">
+                            <div class="grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Position (EN)</label>
+                                    <input type="text" name="position_en" id="positionEnInput"
+                                           value="{{ prefill_position_en or default_position_en }}"
+                                           class="form-input w-full" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Attachment (EN)</label>
+                                    <select name="attachment_en" required class="form-input w-full" id="attachmentEnSelect">
+                                        {% for att in attachments_en %}
+                                        <option value="{{ att }}"
+                                            {% if prefill_attachment_en and att == prefill_attachment_en %}selected
+                                            {% elif not prefill_attachment_en and loop.first %}selected{% endif %}
+                                        >{{ att }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Attachment (FR)</label>
-                                <select name="attachment_fr" required class="form-input w-full" id="attachmentFrSelect">
-                                    {% for att in attachments_fr %}
-                                    <option value="{{ att }}"
-                                        {% if prefill_attachment_fr and att == prefill_attachment_fr %}selected
-                                        {% elif not prefill_attachment_fr and loop.first %}selected{% endif %}
-                                    >{{ att }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email Body (EN)</label>
+                                <textarea name="body_en" id="bodyEnInput" rows="8" class="form-input w-full">{{ prefill_body_en or default_body_en }}</textarea>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Body (FR)</label>
-                            <textarea
-                                name="body_fr"
-                                id="bodyFrInput"
-                                rows="8"
-                                class="form-input w-full"
-                            >{{ prefill_body_fr or default_body_fr }}</textarea>
+
+                        <div class="language-pane hidden" data-lang-pane="fr">
+                            <div class="grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Position (FR)</label>
+                                    <input type="text" name="position_fr" id="positionFrInput"
+                                           value="{{ prefill_position_fr or default_position_fr }}"
+                                           class="form-input w-full" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Attachment (FR)</label>
+                                    <select name="attachment_fr" required class="form-input w-full" id="attachmentFrSelect">
+                                        {% for att in attachments_fr %}
+                                        <option value="{{ att }}"
+                                            {% if prefill_attachment_fr and att == prefill_attachment_fr %}selected
+                                            {% elif not prefill_attachment_fr and loop.first %}selected{% endif %}
+                                        >{{ att }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email Body (FR)</label>
+                                <textarea name="body_fr" id="bodyFrInput" rows="8" class="form-input w-full">{{ prefill_body_fr or default_body_fr }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Details Drawer -->
-            <section aria-labelledby="detailsHeading">
-                <div class="flex items-center justify-between">
-                    <h2 id="detailsHeading" class="text-lg font-semibold text-gray-900">Details</h2>
-                    <button type="button" onclick="toggleDetails()" id="detailsToggle" class="text-sm text-blue-600 hover:text-blue-700">
-                        <i class="fas fa-chevron-down mr-1"></i>Show details
-                    </button>
+            <!-- Additional Details -->
+            <section aria-labelledby="detailsHeading" class="border-b border-gray-100">
+                <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 id="detailsHeading" class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-info-circle text-purple-600 mr-3"></i>
+                            Additional Details
+                        </h2>
+                        <button type="button" onclick="toggleDetails()" id="detailsToggle"
+                                class="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-purple-200 transition-all hover:shadow-md">
+                            <i class="fas fa-chevron-down"></i>
+                            <span>Show details</span>
+                        </button>
+                    </div>
                 </div>
-                <div id="detailsDrawer" class="hidden mt-4 space-y-6 border border-gray-200 rounded-xl p-4 bg-gray-50" aria-hidden="true">
+
+                <div id="detailsDrawer" class="hidden p-6 space-y-6 bg-gradient-to-br from-gray-50 to-gray-100" aria-hidden="true">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Company Type</label>
                             <select name="company_type" id="companyTypeSelect" class="form-input w-full">
-                                <option value="">Select</option>
                                 <option value="Oil & Gas" {% if prefill_company_type == 'Oil & Gas' %}selected{% endif %}>Oil & Gas</option>
                                 <option value="Petrochemical" {% if prefill_company_type == 'Petrochemical' %}selected{% endif %}>Petrochemical</option>
                                 <option value="Power & Energy" {% if prefill_company_type == 'Power & Energy' %}selected{% endif %}>Power & Energy</option>
@@ -258,46 +314,61 @@
                                 <option value="Consumer Goods" {% if prefill_company_type == 'Consumer Goods' %}selected{% endif %}>Consumer Goods</option>
                             </select>
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                            <input type="url" name="website" id="websiteInput" placeholder="https://company.com" value="{{ prefill_website or '' }}" class="form-input w-full">
+                            <input type="url" name="website" id="websiteInput" placeholder="https://company.com"
+                                   value="{{ prefill_website or '' }}" class="form-input w-full">
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                            <input type="tel" name="phone" id="phoneInput" placeholder="+1 234 567 890" value="{{ prefill_phone or '' }}" class="form-input w-full">
+                            <input type="tel" name="phone" id="phoneInput" placeholder="+1 234 567 890"
+                                   value="{{ prefill_phone or '' }}" class="form-input w-full">
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Location / Place</label>
-                            <input type="text" name="place" id="placeInput" placeholder="City, Country" value="{{ prefill_place or '' }}" class="form-input w-full">
+                            <input type="text" name="place" id="placeInput" placeholder="City, Country"
+                                   value="{{ prefill_place or '' }}" class="form-input w-full">
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Source</label>
-                            <input type="text" name="reference" id="referenceInput" placeholder="Job reference, requisition ID, or source" value="{{ prefill_reference or '' }}" class="form-input w-full">
+                            <input type="text" name="reference" id="referenceInput" placeholder="Job reference, requisition ID, or source"
+                                   value="{{ prefill_reference or '' }}" class="form-input w-full">
                         </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Salary Range</label>
-                            <input type="text" name="salary" id="salaryInput" placeholder="e.g. 80,000 – 120,000" value="{{ prefill_salary or '' }}" class="form-input w-full">
+                            <input type="text" name="salary" id="salaryInput" placeholder="e.g. 80,000 – 120,000"
+                                   value="{{ prefill_salary or '' }}" class="form-input w-full">
                         </div>
                     </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>
-                        <textarea name="notes" id="notesInput" rows="3" class="form-input w-full" placeholder="Interview notes, recruiter name, internal remarks...">{{ prefill_notes or '' }}</textarea>
+                        <textarea name="notes" id="notesInput" rows="3" class="form-input w-full"
+                                  placeholder="Interview notes, recruiter name, internal remarks...">{{ prefill_notes or '' }}</textarea>
                     </div>
                 </div>
             </section>
 
             <!-- Sticky Send Bar -->
-            <div class="sticky bottom-0 left-0 right-0 bg-white pt-4 border-t border-gray-200">
+            <div class="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-gray-50 to-gray-100 pt-6 pb-6 px-6 border-t-2 border-gray-200 shadow-lg">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
-                    <div id="preflightStatus" class="text-sm text-gray-700">
-                        Ready to send
+                    <div id="preflightStatus" class="flex items-center space-x-2 text-sm font-medium">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-gray-700">Ready to send</span>
                     </div>
                     <div class="flex items-center space-x-3">
                         <button type="reset" class="btn-secondary" id="resetBtn">
-                            <i class="fas fa-undo mr-1"></i> Reset
+                            <i class="fas fa-undo mr-2"></i> Reset
                         </button>
-                        <button type="submit" class="btn-primary" id="sendBtn">
-                            <i class="fas fa-paper-plane mr-1"></i> Send Application
+                        <button type="submit"
+                                class="btn-primary bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+                                id="sendBtn">
+                            <i class="fas fa-paper-plane mr-2"></i> Send Application
                         </button>
                     </div>
                 </div>
@@ -305,28 +376,98 @@
         </form>
 
         <!-- Delivery Report -->
-        <div id="deliveryReport" class="hidden mt-6 border border-gray-200 rounded-xl p-4 bg-gray-50" aria-live="polite">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-semibold text-gray-900">Delivery Report</h3>
-                <span id="deliverySummary" class="text-sm font-medium text-gray-700"></span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-4 py-2 text-left text-gray-600">Recipient</th>
-                            <th class="px-4 py-2 text-left text-gray-600">Language</th>
-                            <th class="px-4 py-2 text-left text-gray-600">Status</th>
-                            <th class="px-4 py-2 text-left text-gray-600">Attachment</th>
-                            <th class="px-4 py-2 text-left text-gray-600">Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody id="deliveryRows" class="divide-y divide-gray-200 bg-white"></tbody>
-                </table>
+        <div id="deliveryReport" class="hidden mt-0 border-t-4 border-green-500" aria-live="polite">
+            <div class="p-6 bg-gradient-to-r from-green-50 to-emerald-50">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3 shadow-lg">
+                            <i class="fas fa-check text-white"></i>
+                        </div>
+                        Delivery Report
+                    </h3>
+                    <span id="deliverySummary" class="text-sm font-semibold text-green-700 bg-green-100 px-4 py-2 rounded-full border border-green-200"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-gray-600">Recipient</th>
+                                <th class="px-4 py-2 text-left text-gray-600">Language</th>
+                                <th class="px-4 py-2 text-left text-gray-600">Status</th>
+                                <th class="px-4 py-2 text-left text-gray-600">Attachment</th>
+                                <th class="px-4 py-2 text-left text-gray-600">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deliveryRows" class="divide-y divide-gray-200 bg-white"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.lang-tab {
+    color: #6b7280;
+    background: white;
+    border: 2px solid transparent;
+}
+
+.lang-tab.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    border-color: #2563eb;
+}
+
+.lang-tab.active[data-lang="fr"] {
+    background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+    box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.3);
+    border-color: #9333ea;
+}
+
+.lang-tab:not(.active):hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.form-input {
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    transform: translateY(-1px);
+}
+
+#applyCompanyBtn:hover {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+#detailsToggle i {
+    transition: transform 0.3s ease;
+}
+
+@keyframes statusPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+#preflightStatus .animate-pulse {
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto !important; }
+    .animate-pulse { animation: none !important; }
+    .form-input:focus { transform: none !important; }
+    .lang-tab.active { box-shadow: none !important; }
+}
+</style>
 
 <script>
 const attachmentsData = {
@@ -349,13 +490,19 @@ if (typeof showToast !== 'function') {
 document.addEventListener('DOMContentLoaded', function() {
     const defaultLanguage = '{{ default_language }}';
 
+    // Ensure Company Type has a default (first option) if no prefill is provided
+    const companyTypeSelect = document.getElementById('companyTypeSelect');
+    if (companyTypeSelect && (!companyTypeSelect.value || companyTypeSelect.value.trim() === '')) {
+        companyTypeSelect.selectedIndex = 0;
+    }
+
     // Set the default language radio button
     const radioButton = document.querySelector(`input[name="language"][value="${defaultLanguage}"]`);
     if (radioButton) {
         radioButton.checked = true;
     }
 
-    // Trigger the change to update the UI
+    // Trigger change to update UI
     handleLanguageChange(defaultLanguage);
 
     setupCompanyApply();
@@ -363,6 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTabs();
 });
 
+// Language switching
 function handleLanguageChange(language) {
     const composerSingle = document.getElementById('composerSingle');
     const composerDual = document.getElementById('composerDual');
@@ -372,14 +520,17 @@ function handleLanguageChange(language) {
         composerSingle.classList.add('hidden');
         composerDual.classList.remove('hidden');
         languageTabs.classList.remove('hidden');
+
         document.getElementById('attachmentSelect').removeAttribute('required');
         document.getElementById('attachmentEnSelect').setAttribute('required', 'required');
         document.getElementById('attachmentFrSelect').setAttribute('required', 'required');
+
         switchLanguageTab('en');
     } else {
         composerSingle.classList.remove('hidden');
         composerDual.classList.add('hidden');
         languageTabs.classList.add('hidden');
+
         document.getElementById('attachmentSelect').setAttribute('required', 'required');
         document.getElementById('attachmentEnSelect').removeAttribute('required');
         document.getElementById('attachmentFrSelect').removeAttribute('required');
@@ -389,27 +540,6 @@ function handleLanguageChange(language) {
     updatePreflight();
 }
 
-function updateAttachmentSelect(language, selectId) {
-    const select = document.getElementById(selectId);
-    const attachments = attachmentsData[language];
-    select.innerHTML = '';
-
-    attachments.forEach((att, index) => {
-        const option = document.createElement('option');
-        option.value = att;
-        option.textContent = att;
-        if (index === 0) option.selected = true;
-        select.appendChild(option);
-    });
-}
-
-function handleCompanySelection(name) {
-    const company = findCompanyByName(name);
-    if (company) {
-        applyCompanyDetails(company, true);
-    }
-}
-
 function findCompanyByName(name) {
     if (!name) return null;
     return companiesData.find(c => (c.name || '').toLowerCase() === name.trim().toLowerCase()) || null;
@@ -417,6 +547,7 @@ function findCompanyByName(name) {
 
 function applyCompanyDetails(company, markApplied = false) {
     if (!company) return;
+
     showDetailsDrawer(true);
 
     const emailField = document.getElementById('emailsInput');
@@ -439,37 +570,52 @@ function applyCompanyDetails(company, markApplied = false) {
     setFieldValue(document.getElementById('notesInput'), company.notes);
 
     if (markApplied) {
-        document.getElementById('companyStatus').textContent = 'Details populated from ' + company.name;
-        document.getElementById('companyStatus').classList.add('text-green-700');
+        const status = document.getElementById('companyStatus');
+        status.textContent = 'Details populated from ' + company.name;
+        status.classList.add('text-green-700');
     }
+
+    // Re-evaluate recipients + readiness after applying company emails
+    const { valid, invalid, duplicatesRemoved } = parseEmails(document.getElementById('emailsInput').value);
+    document.getElementById('validCount').textContent = valid.length;
+    document.getElementById('invalidCount').textContent = invalid.length;
+    document.getElementById('duplicateCount').textContent = duplicatesRemoved;
+    document.getElementById('recipientSummary').innerHTML = `<i class="fas fa-users text-gray-500 mr-2"></i>Will send ${valid.length} email${valid.length !== 1 ? 's' : ''}`;
+    refreshReadiness();
+    updatePreflight();
 }
 
 function setFieldValue(element, value) {
-    if (!element || !value) return;
+    if (!element || value === undefined || value === null) return;
+    if (String(value).trim() === '') return;
     element.value = value;
 }
 
+// Details drawer
 function showDetailsDrawer(forceOpen = false) {
     const drawer = document.getElementById('detailsDrawer');
     const toggle = document.getElementById('detailsToggle');
+
     if (forceOpen) {
         drawer.classList.remove('hidden');
         drawer.setAttribute('aria-hidden', 'false');
-        toggle.innerHTML = '<i class="fas fa-chevron-up mr-1"></i>Hide details';
+        toggle.innerHTML = '<i class="fas fa-chevron-up"></i><span>Hide details</span>';
         return;
     }
-    const expanded = !drawer.classList.contains('hidden');
+
+    const isOpen = !drawer.classList.contains('hidden');
     drawer.classList.toggle('hidden');
-    drawer.setAttribute('aria-hidden', String(expanded));
-    toggle.innerHTML = expanded
-        ? '<i class="fas fa-chevron-down mr-1"></i>Show details'
-        : '<i class="fas fa-chevron-up mr-1"></i>Hide details';
+    drawer.setAttribute('aria-hidden', String(isOpen));
+    toggle.innerHTML = isOpen
+        ? '<i class="fas fa-chevron-down"></i><span>Show details</span>'
+        : '<i class="fas fa-chevron-up"></i><span>Hide details</span>';
 }
 
 function toggleDetails() {
     showDetailsDrawer();
 }
 
+// Company apply button
 function setupCompanyApply() {
     const companyInput = document.getElementById('companyInput');
     const applyBtn = document.getElementById('applyCompanyBtn');
@@ -477,21 +623,32 @@ function setupCompanyApply() {
 
     applyBtn.addEventListener('click', () => {
         const company = findCompanyByName(companyInput.value);
+        if (!company) {
+            showToast('Company not found in suggestions. Please select from the list or type correctly.', 'warning');
+            return;
+        }
         applyCompanyDetails(company, true);
     });
 }
 
+// Email watcher + counters
 function setupEmailWatcher() {
     const emailsInput = document.getElementById('emailsInput');
     if (!emailsInput) return;
+
     const update = () => {
         const { valid, invalid, duplicatesRemoved } = parseEmails(emailsInput.value);
         document.getElementById('validCount').textContent = valid.length;
         document.getElementById('invalidCount').textContent = invalid.length;
         document.getElementById('duplicateCount').textContent = duplicatesRemoved;
-        document.getElementById('recipientSummary').textContent = `Will send ${valid.length} emails`;
+
+        document.getElementById('recipientSummary').innerHTML =
+            `<i class="fas fa-users text-gray-500 mr-2"></i>Will send ${valid.length} email${valid.length !== 1 ? 's' : ''}`;
+
+        refreshReadiness();
         updatePreflight();
     };
+
     emailsInput.addEventListener('input', update);
     update();
 }
@@ -503,21 +660,25 @@ function parseEmails(raw) {
     const invalid = [];
     let duplicatesRemoved = 0;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     for (const e of entries) {
         if (!emailRegex.test(e)) {
             invalid.push(e);
             continue;
         }
-        if (seen.has(e.toLowerCase())) {
+        const k = e.toLowerCase();
+        if (seen.has(k)) {
             duplicatesRemoved += 1;
             continue;
         }
-        seen.add(e.toLowerCase());
+        seen.add(k);
         valid.push(e);
     }
+
     return { valid, invalid, duplicatesRemoved };
 }
 
+// Tabs
 function setupTabs() {
     document.querySelectorAll('.lang-tab').forEach(btn => {
         btn.addEventListener('click', () => switchLanguageTab(btn.dataset.lang));
@@ -527,17 +688,23 @@ function setupTabs() {
 function switchLanguageTab(lang) {
     document.querySelectorAll('.lang-tab').forEach(btn => {
         if (btn.dataset.lang === lang) {
-            btn.classList.add('border-b-2', 'border-blue-500', 'text-blue-700', 'active');
+            btn.classList.add('active');
+            // mark fr tab style when active
+            if (lang === 'fr') btn.setAttribute('data-lang', 'fr');
+            else btn.setAttribute('data-lang', 'en');
         } else {
-            btn.classList.remove('border-b-2', 'border-blue-500', 'text-blue-700', 'active');
+            btn.classList.remove('active');
         }
     });
+
     document.querySelectorAll('.language-pane').forEach(pane => {
         pane.classList.toggle('hidden', pane.dataset.langPane !== lang);
     });
+
     refreshReadiness();
 }
 
+// Readiness
 function getReadiness() {
     const language = document.querySelector('input[name="language"]:checked').value;
     const { valid } = parseEmails(document.getElementById('emailsInput').value);
@@ -561,24 +728,34 @@ function getReadiness() {
 function refreshReadiness() {
     const readinessStrip = document.getElementById('readinessStrip');
     const { language } = getReadiness();
+
     if (language === 'both') {
         const enOk = document.getElementById('attachmentEnSelect').value && document.getElementById('bodyEnInput').value.trim();
         const frOk = document.getElementById('attachmentFrSelect').value && document.getElementById('bodyFrInput').value.trim();
-        readinessStrip.textContent = `EN: ${enOk ? 'Ready' : 'Missing fields'} | FR: ${frOk ? 'Ready' : 'Missing fields'}`;
+        readinessStrip.innerHTML = `<i class="fas fa-info-circle mr-2"></i>EN: ${enOk ? 'Ready' : 'Missing'} | FR: ${frOk ? 'Ready' : 'Missing'}`;
     } else {
         const singleOk = document.getElementById('attachmentSelect').value && document.getElementById('bodySingleInput').value.trim();
-        readinessStrip.textContent = singleOk ? 'Ready' : 'Add attachment and body';
+        readinessStrip.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${singleOk ? 'Ready to send' : 'Add attachment and body'}`;
     }
 }
 
 function updatePreflight() {
     const { issues, recipientCount } = getReadiness();
     const preflight = document.getElementById('preflightStatus');
+
     if (issues.length === 0) {
-        preflight.textContent = `Ready to send (${recipientCount} recipients)`;
+        preflight.innerHTML = `
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span class="text-gray-700">Ready to send (${recipientCount} recipient${recipientCount !== 1 ? 's' : ''})</span>
+        `;
         preflight.classList.remove('text-red-600');
+        preflight.classList.add('text-gray-700');
     } else {
-        preflight.textContent = `${issues.length} issues to resolve: ${issues.join(', ')}`;
+        preflight.innerHTML = `
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <span class="text-red-600">${issues.length} issue${issues.length !== 1 ? 's' : ''}: ${issues.join(', ')}</span>
+        `;
+        preflight.classList.remove('text-gray-700');
         preflight.classList.add('text-red-600');
     }
 }
@@ -599,7 +776,7 @@ document.getElementById('sendForm').addEventListener('submit', async (e) => {
 
     const submitButton = document.getElementById('sendBtn');
     submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
 
     try {
         const response = await fetch('/send', {
@@ -621,7 +798,7 @@ document.getElementById('sendForm').addEventListener('submit', async (e) => {
         showToast('Network error: ' + error.message, 'error');
     } finally {
         submitButton.disabled = false;
-        submitButton.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Application';
+        submitButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Send Application';
     }
 });
 
@@ -636,25 +813,61 @@ function renderDeliveryReport(results) {
     }
 
     report.classList.remove('hidden');
+
     const successCount = results.filter(r => r.status === 'success').length;
     const failCount = results.length - successCount;
-    summaryEl.textContent = `Sent ${successCount}/${results.length} • ${failCount} failed`;
 
-    rowsEl.innerHTML = results.map(r => {
-        const color = r.status === 'success' ? 'text-green-700' : 'text-red-700';
+    summaryEl.innerHTML = `
+        <i class="fas fa-check-circle mr-2"></i>
+        ${successCount}/${results.length} sent
+        ${failCount > 0 ? `<span class="ml-2 text-red-600">• ${failCount} failed</span>` : ''}
+    `;
+
+    rowsEl.innerHTML = results.map((r, index) => {
+        const isSuccess = r.status === 'success';
+        const bgColor = isSuccess ? 'bg-green-50' : 'bg-red-50';
+        const borderColor = isSuccess ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500';
+        const icon = isSuccess ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600';
         const attachment = r.attachment || '';
+
+        const langBadge = (r.language || '') === 'en'
+            ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><i class="fas fa-flag-usa mr-1"></i>EN</span>'
+            : '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700"><i class="fas fa-flag mr-1"></i>FR</span>';
+
+        const timestamp = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
         return `
-            <tr>
-                <td class="px-4 py-2 text-gray-900">${r.email || ''}</td>
-                <td class="px-4 py-2 text-gray-700 uppercase">${(r.language || '').toUpperCase()}</td>
-                <td class="px-4 py-2 ${color} font-medium">${r.status}</td>
-                <td class="px-4 py-2 text-gray-700">${attachment}</td>
-                <td class="px-4 py-2 text-gray-500">${new Date().toISOString().slice(0,16).replace('T',' ')}</td>
+            <tr class="${bgColor} ${borderColor} transition-all hover:shadow-md" style="animation: slideIn 0.3s ease-out ${index * 0.08}s both;">
+                <td class="px-4 py-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas ${icon}"></i>
+                        <span class="font-medium text-gray-900">${r.email || ''}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-3">${langBadge}</td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        ${r.status}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-700">
+                    ${attachment ? `<i class="fas fa-paperclip mr-1 text-gray-400"></i>${attachment}` : '—'}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">${timestamp}</td>
             </tr>
         `;
     }).join('');
 
-    report.scrollIntoView({ behavior: 'smooth' });
+    report.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+// Slide-in animation
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}`;
+document.head.appendChild(styleEl);
 </script>
 {% endblock %}
