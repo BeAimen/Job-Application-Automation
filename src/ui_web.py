@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List, Optional
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 import os
 from datetime import datetime, timedelta
 import pytz
@@ -80,6 +81,25 @@ def get_template_manager():
     if _template_manager is None:
         _template_manager = TemplateManager()
     return _template_manager
+
+
+def normalize_website_url(url: Optional[str]) -> Optional[str]:
+    """Normalize website URLs so bare domains become valid HTTPS addresses."""
+    if url is None:
+        return None
+
+    url = url.strip()
+    if not url:
+        return None
+
+    working = url if "://" in url else f"https://{url}"
+
+    parsed = urlparse(working)
+    if not parsed.netloc and parsed.path:
+        parsed = urlparse(f"https://{parsed.path}")
+
+    parsed = parsed._replace(path=parsed.path or "/")
+    return urlunparse(parsed)
 
 
 def calculate_real_response_rate(all_apps):
@@ -367,7 +387,7 @@ async def send_application(
     company_name = clean_optional(company)
     company_type_value = clean_optional(company_type)
     phone_value = clean_optional(phone)
-    website_value = clean_optional(website)
+    website_value = normalize_website_url(clean_optional(website))
     notes_value = clean_optional(notes)
     salary_value = clean_optional(salary)
     place_value = clean_optional(place)
@@ -873,7 +893,7 @@ async def create_company(
             company_type=type,
             email=email,
             phone=phone,
-            website=website,
+            website=normalize_website_url(website),
             location=location,
             reference=reference,
             salary_range=salary_range,
@@ -944,7 +964,7 @@ async def update_company(
             company_type=type,
             email=email,
             phone=phone,
-            website=website,
+            website=normalize_website_url(website),
             location=location,
             reference=reference,
             salary_range=salary_range,
