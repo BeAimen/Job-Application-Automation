@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+from email.header import Header
 from pathlib import Path
 from typing import Optional
 import time
@@ -11,6 +12,7 @@ import random
 
 import backoff
 from googleapiclient.discovery import Resource
+from urllib.parse import quote
 
 from src.config import GMAIL_USER_EMAIL, DEFAULT_DELAY_BETWEEN_EMAILS, MAX_RETRIES
 
@@ -74,9 +76,19 @@ class GmailMailer:
                 part.set_payload(f.read())
 
             encoders.encode_base64(part)
+            # Ensure attachment filenames are correctly encoded (UTF-8 + RFC 2231) so
+            # non-ASCII names don't get replaced with "noname" by some clients.
+            filename = attachment_path.name
+            encoded_filename = Header(filename, "utf-8").encode()
             part.add_header(
                 "Content-Disposition",
-                f'attachment; filename="{attachment_path.name}"'
+                "attachment",
+                filename=encoded_filename
+            )
+            part.set_param(
+                "filename*",
+                f"utf-8''{quote(filename)}",
+                header="Content-Disposition"
             )
             message.attach(part)
 
