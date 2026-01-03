@@ -3,8 +3,10 @@ from google.oauth2.credentials import Credentials
 from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from google.auth.exceptions import RefreshError
 
 from typing import Optional, Tuple
+import os
 
 from src.config import (
     SCOPES, AUTH_MODE, OAUTH_CREDENTIALS_PATH, OAUTH_TOKEN_PATH,
@@ -49,23 +51,49 @@ class GoogleAuthenticator:
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
+                try:
+                    # Try to refresh the token
+                    creds.refresh(Request())
+                    print("✅ Token refreshed successfully")
+                except RefreshError as e:
+                    # Token has been revoked or is invalid - delete it and re-authenticate
+                    print(f"⚠️  Token refresh failed: {e}")
+                    print("🔄 Token has been revoked or expired. Starting re-authentication...")
+
+                    # Delete the invalid token file
+                    if OAUTH_TOKEN_PATH.exists():
+                        try:
+                            os.remove(OAUTH_TOKEN_PATH)
+                            print(f"🗑️  Removed invalid token file: {OAUTH_TOKEN_PATH}")
+                        except Exception as remove_error:
+                            print(f"⚠️  Could not remove token file: {remove_error}")
+
+                    # Set creds to None to trigger re-authentication
+                    creds = None
+
+            # If creds is None (either never existed, invalid, or refresh failed), re-authenticate
+            if not creds:
                 if not OAUTH_CREDENTIALS_PATH.exists():
                     raise FileNotFoundError(
                         f"OAuth credentials file not found: {OAUTH_CREDENTIALS_PATH}\n"
                         "Download OAuth client credentials from Google Cloud Console."
                     )
 
+                print("🔐 Starting OAuth authentication flow...")
+                print("📱 Your browser will open for authentication.")
+
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(OAUTH_CREDENTIALS_PATH),
                     SCOPES
                 )
                 creds = flow.run_local_server(port=0)
+                print("✅ Authentication successful!")
 
+            # Save the credentials
             OAUTH_TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
             with open(OAUTH_TOKEN_PATH, "w") as token:
                 token.write(creds.to_json())
+            print(f"💾 Credentials saved to: {OAUTH_TOKEN_PATH}")
 
         return creds
 
