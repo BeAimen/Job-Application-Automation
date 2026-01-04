@@ -101,7 +101,8 @@
                         data-name="{{ company.name|lower }}"
                         data-type="{{ company.type|lower if company.type else '' }}"
                         data-location="{{ company.location|lower if company.location else '' }}"
-                        data-has-email="{{ 'yes' if company.email else 'no' }}">
+                        data-has-email="{{ 'yes' if company.email else 'no' }}"
+                        data-added-date="{{ company.added_date or '' }}">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
@@ -705,8 +706,31 @@ async function submitCompany() {
             closeCompanyModal();
             showToast(companyId ? 'Company updated!' : 'Company added!', 'success');
 
-            // Reload page to refresh data
-            setTimeout(() => window.location.reload(), 500);
+            const formValues = Object.fromEntries(data.entries());
+            const companyData = json.company || {
+                id: companyId || json.company_id,
+                name: formValues.name,
+                type: formValues.type,
+                location: formValues.location,
+                email: formValues.email,
+                phone: formValues.phone,
+                website: formValues.website,
+                reference: formValues.reference,
+                salary_range: formValues.salary_range,
+                notes: formValues.notes,
+                added_date: document.querySelector(`.company-row[data-id="${companyId}"]`)?.dataset.addedDate || new Date().toISOString(),
+                last_updated: new Date().toISOString()
+            };
+
+            if (!companyData.id && json.company_id) {
+                companyData.id = json.company_id;
+            }
+
+            if (!companyData.website && formValues.website) {
+                companyData.website = formValues.website;
+            }
+
+            upsertCompanyRow(companyData);
         } else {
             throw new Error(json.error || 'Save failed');
         }
@@ -735,17 +759,9 @@ async function deleteCompany(id, name) {
         if (json && json.success) {
             if (row) row.remove();
 
-            // Update stats
-            const totalEl = document.getElementById('totalCompanies');
-            totalEl.textContent = parseInt(totalEl.textContent) - 1;
-
-            // Check if table is empty
-            const tbody = document.getElementById('companiesTbody');
-            if (!tbody || tbody.children.length === 0) {
-                document.getElementById('companiesTableWrapper').style.display = 'none';
-                document.getElementById('noCompaniesPlaceholder').style.display = '';
-            }
-
+            ensureTableVisibility();
+            refreshStatsFromRows();
+            syncExistingCompaniesFromRows();
             showToast('Company deleted', 'success');
         } else {
             throw new Error(json.error || 'Delete failed');
@@ -794,6 +810,149 @@ function escapeHtml(s) {
 function escapeAttr(s) {
     if (!s && s !== 0) return '';
     return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function buildCompanyRow(company) {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50 company-row';
+    tr.dataset.id = company.id;
+    tr.dataset.name = (company.name || '').toLowerCase();
+    tr.dataset.type = (company.type || '').toLowerCase();
+    tr.dataset.location = (company.location || '').toLowerCase();
+    tr.dataset.hasEmail = company.email ? 'yes' : 'no';
+    tr.dataset.addedDate = company.added_date || '';
+
+    const emails = (company.email || '').split(',').map(e => e.trim()).filter(Boolean);
+    const primaryEmail = emails[0] || '';
+    const extraCount = Math.max(0, emails.length - 1);
+
+    tr.innerHTML = `
+        <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">${escapeHtml(company.name?.[0]?.toUpperCase() || '?')}</span>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">${escapeHtml(company.name || '')}</div>
+                    ${company.website ? `
+                        <a href="${escapeHtml(company.website)}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-external-link-alt mr-1"></i>Website
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            ${company.type ? `
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    ${escapeHtml(company.type)}
+                </span>
+            ` : '<span class="text-gray-400 text-sm">—</span>'}
+        </td>
+        <td class="px-6 py-4">
+            <div class="text-sm text-gray-900">
+                ${primaryEmail ? `
+                    <div class="flex items-center mb-1">
+                        <i class="fas fa-envelope text-green-500 mr-2"></i>
+                        <a href="mailto:${escapeHtml(primaryEmail)}" class="text-blue-600 hover:text-blue-800">
+                            ${escapeHtml(primaryEmail)}
+                        </a>
+                    </div>
+                    ${extraCount > 0 ? `<div class="text-xs text-gray-500 ml-6">+${extraCount} more</div>` : ''}
+                ` : '<span class="text-gray-400 text-xs">No email</span>'}
+            </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            ${escapeHtml(company.location || '—')}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            ${company.added_date ? escapeHtml(company.added_date.slice(0, 10)) : 'N/A'}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <div class="flex space-x-2">
+                <a href="/companies/${encodeURIComponent(company.id)}"
+   class="text-blue-600 hover:text-blue-900 p-2 rounded hover:bg-blue-50"
+   title="View Details">
+    <i class="fas fa-eye"></i>
+</a>
+
+                </button>
+                <button onclick="editCompany('${escapeAttr(company.id)}')"
+                        class="text-green-600 hover:text-green-900 p-2 rounded hover:bg-green-50"
+                        title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteCompany('${escapeAttr(company.id)}','${escapeAttr(company.name || '')}')"
+                        class="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50"
+                        title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    `;
+
+    return tr;
+}
+
+function ensureTableVisibility() {
+    const tableWrapper = document.getElementById('companiesTableWrapper');
+    const placeholder = document.getElementById('noCompaniesPlaceholder');
+    const rows = document.querySelectorAll('.company-row');
+
+    if (rows.length === 0) {
+        tableWrapper.style.display = 'none';
+        placeholder.style.display = '';
+    } else {
+        tableWrapper.style.display = '';
+        placeholder.style.display = 'none';
+    }
+}
+
+function refreshStatsFromRows() {
+    const rows = Array.from(document.querySelectorAll('.company-row'));
+    const total = rows.length;
+    const withEmail = rows.filter(row => row.dataset.hasEmail === 'yes').length;
+
+    const now = new Date();
+    const addedThisMonth = rows.filter(row => {
+        if (!row.dataset.addedDate) return false;
+        const added = new Date(row.dataset.addedDate);
+        return (
+            !isNaN(added.getTime()) &&
+            added.getMonth() === now.getMonth() &&
+            added.getFullYear() === now.getFullYear()
+        );
+    }).length;
+
+    document.getElementById('totalCompanies').textContent = total;
+    document.getElementById('withEmailCount').textContent = withEmail;
+    document.getElementById('withoutEmailCount').textContent = Math.max(0, total - withEmail);
+    document.getElementById('addedThisMonth').textContent = addedThisMonth;
+}
+
+function syncExistingCompaniesFromRows() {
+    existingCompanies = Array.from(document.querySelectorAll('.company-row')).map(
+        row => row.dataset.name || ''
+    );
+}
+
+function upsertCompanyRow(company) {
+    if (!company || !company.id) return;
+
+    const tbody = document.getElementById('companiesTbody');
+    const existingRow = document.querySelector(`.company-row[data-id="${company.id}"]`);
+    const newRow = buildCompanyRow(company);
+
+    if (existingRow) {
+        existingRow.replaceWith(newRow);
+    } else if (tbody) {
+        tbody.prepend(newRow);
+    }
+
+    ensureTableVisibility();
+    refreshStatsFromRows();
+    syncExistingCompaniesFromRows();
+    filterCompanies();
 }
 
 // Close modals on Escape
