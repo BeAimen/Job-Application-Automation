@@ -627,21 +627,65 @@ async def process_followups(
 
 @app.get("/analytics", response_class=HTMLResponse)
 async def analytics_page(request: Request):
+    """Analytics dashboard with comprehensive metrics."""
     analytics = get_analytics()
 
     try:
+        # Get all analytics data
         stats = analytics.get_dashboard_stats()
         timeline = analytics.get_timeline_data(30)
         company_heatmap = analytics.get_company_heatmap(10)
         status_dist = analytics.get_status_distribution()
         followup_data = analytics.get_followup_effectiveness()
+
+        # Log analytics view
+        from src.monitoring import system_monitor
+        system_monitor.log_event(
+            'analytics_viewed',
+            'info',
+            'Analytics dashboard accessed',
+            {
+                'total_apps': stats['total_applications'],
+                'success_rate': stats['success_rate']
+            }
+        )
+
     except Exception as e:
         print(f"Analytics error: {e}")
-        stats = {'success_rate': 0, 'sent': 0, 'total_followups': 0, 'bounced': 0, 'total_applications': 1}
+
+        # Log error
+        from src.monitoring import system_monitor
+        system_monitor.log_event(
+            'analytics_error',
+            'error',
+            f'Failed to load analytics: {str(e)}'
+        )
+
+        # Fallback to empty data
+        stats = {
+            'success_rate': 0,
+            'response_rate': 0,
+            'sent': 0,
+            'total_followups': 0,
+            'avg_followups': 0,
+            'bounced': 0,
+            'failed': 0,
+            'pending': 0,
+            'successful': 0,
+            'responded': 0,
+            'rejected': 0,
+            'total_applications': 0,
+            'applications_sent': 0,
+            'language_distribution': {'en': 0, 'fr': 0}
+        }
         timeline = {'labels': [], 'data': []}
         company_heatmap = []
         status_dist = {}
-        followup_data = {'distribution': {}, 'max_followups': 0, 'avg_followups': 0}
+        followup_data = {
+            'distribution': {},
+            'max_followups': 0,
+            'avg_followups': 0
+        }
 
     return templates.TemplateResponse(
         "analytics.html",

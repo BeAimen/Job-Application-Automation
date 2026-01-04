@@ -4,28 +4,88 @@
 
 {% block content %}
 <!-- Page Header -->
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
-    <p class="text-sm text-gray-500 mt-1">Insights and trends from your job applications</p>
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
+        <p class="text-sm text-gray-500 mt-1">Insights and performance metrics from your job applications</p>
+    </div>
+    <button onclick="window.location.reload()" class="btn-secondary">
+        <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+    </button>
 </div>
 
-<!-- KPI Cards -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<!-- Key Metrics Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Success Rate -->
     <div class="stat-card-minimal">
-        <p class="text-sm text-gray-600">Success Rate</p>
-        <p class="text-3xl font-bold text-gray-900">{{ stats.success_rate|round(1) }}%</p>
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-gray-600">Success Rate</p>
+            <i class="fas fa-trophy text-yellow-500"></i>
+        </div>
+        <p class="text-3xl font-bold text-gray-900">{{ stats.success_rate }}%</p>
+        <p class="text-xs text-gray-500 mt-1">
+            {{ stats.successful }} positive response{{ 's' if stats.successful != 1 else '' }}
+            / {{ stats.applications_sent }} sent
+        </p>
     </div>
+
+    <!-- Response Rate -->
     <div class="stat-card-minimal">
-        <p class="text-sm text-gray-600">Total Sent</p>
-        <p class="text-3xl font-bold text-gray-900">{{ stats.sent }}</p>
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-gray-600">Response Rate</p>
+            <i class="fas fa-reply text-blue-500"></i>
+        </div>
+        <p class="text-3xl font-bold text-gray-900">{{ stats.response_rate }}%</p>
+        <p class="text-xs text-gray-500 mt-1">
+            {{ stats.responded }} response{{ 's' if stats.responded != 1 else '' }}
+            ({{ stats.rejected }} rejection{{ 's' if stats.rejected != 1 else '' }})
+        </p>
     </div>
+
+    <!-- Total Follow-ups -->
     <div class="stat-card-minimal">
-        <p class="text-sm text-gray-600">Total Follow-ups</p>
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-gray-600">Total Follow-ups</p>
+            <i class="fas fa-redo text-green-500"></i>
+        </div>
         <p class="text-3xl font-bold text-gray-900">{{ stats.total_followups }}</p>
+        <p class="text-xs text-gray-500 mt-1">
+            Avg {{ stats.avg_followups }} per application
+        </p>
     </div>
+
+    <!-- Bounce Rate -->
     <div class="stat-card-minimal">
-        <p class="text-sm text-gray-600">Bounce Rate</p>
-        <p class="text-3xl font-bold text-gray-900">{{ (stats.bounced / stats.total_applications * 100)|round(1) if stats.total_applications > 0 else 0 }}%</p>
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-gray-600">Bounce Rate</p>
+            <i class="fas fa-exclamation-triangle text-red-500"></i>
+        </div>
+        <p class="text-3xl font-bold text-gray-900">
+            {{ ((stats.bounced / stats.applications_sent * 100)|round(1)) if stats.applications_sent > 0 else 0 }}%
+        </p>
+        <p class="text-xs text-gray-500 mt-1">
+            {{ stats.bounced }} bounced email{{ 's' if stats.bounced != 1 else '' }}
+        </p>
+    </div>
+</div>
+
+<!-- Overview Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-sm text-gray-600 mb-1">Total Applications</p>
+        <p class="text-2xl font-bold text-gray-900">{{ stats.total_applications }}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-sm text-gray-600 mb-1">Applications Sent</p>
+        <p class="text-2xl font-bold text-blue-600">{{ stats.sent }}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-sm text-gray-600 mb-1">Pending</p>
+        <p class="text-2xl font-bold text-yellow-600">{{ stats.pending }}</p>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <p class="text-sm text-gray-600 mb-1">Failed/Bounced</p>
+        <p class="text-2xl font-bold text-red-600">{{ stats.failed + stats.bounced }}</p>
     </div>
 </div>
 
@@ -34,17 +94,23 @@
     <!-- Applications Over Time -->
     <div class="chart-card">
         <div class="chart-header">
-            <h3 class="chart-title">Applications Over Time</h3>
+            <h3 class="chart-title">
+                <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                Applications Over Time (30 Days)
+            </h3>
         </div>
         <div class="chart-body">
             <canvas id="timelineChart" height="250"></canvas>
         </div>
     </div>
-    
+
     <!-- Status Distribution -->
     <div class="chart-card">
         <div class="chart-header">
-            <h3 class="chart-title">Status Distribution</h3>
+            <h3 class="chart-title">
+                <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                Status Distribution
+            </h3>
         </div>
         <div class="chart-body">
             <canvas id="statusChart" height="250"></canvas>
@@ -52,25 +118,149 @@
     </div>
 </div>
 
-<!-- Company Heatmap & Follow-up Analysis -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Response Funnel -->
+<div class="chart-card mb-6">
+    <div class="chart-header">
+        <h3 class="chart-title">
+            <i class="fas fa-filter text-green-500 mr-2"></i>
+            Application Funnel
+        </h3>
+    </div>
+    <div class="chart-body">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div class="text-center">
+                <div class="text-3xl font-bold text-gray-900">{{ stats.total_applications }}</div>
+                <div class="text-xs text-gray-600 mt-1">Total</div>
+            </div>
+            <div class="flex items-center justify-center">
+                <i class="fas fa-arrow-right text-gray-400"></i>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-blue-600">{{ stats.sent }}</div>
+                <div class="text-xs text-gray-600 mt-1">Sent</div>
+            </div>
+            <div class="flex items-center justify-center">
+                <i class="fas fa-arrow-right text-gray-400"></i>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-purple-600">{{ stats.responded }}</div>
+                <div class="text-xs text-gray-600 mt-1">Responded</div>
+            </div>
+            <div class="flex items-center justify-center">
+                <i class="fas fa-arrow-right text-gray-400"></i>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-green-600">{{ stats.successful }}</div>
+                <div class="text-xs text-gray-600 mt-1">Positive</div>
+            </div>
+        </div>
+        <div class="mt-4 h-4 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-green-500"
+                 style="width: {{ (stats.successful / stats.total_applications * 100)|round(1) if stats.total_applications > 0 else 0 }}%"></div>
+        </div>
+        <p class="text-center text-sm text-gray-600 mt-2">
+            Overall conversion: {{ (stats.successful / stats.total_applications * 100)|round(1) if stats.total_applications > 0 else 0 }}%
+        </p>
+    </div>
+</div>
+
+<!-- Language & Company Analysis -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Language Distribution -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">
+                <i class="fas fa-globe text-indigo-500 mr-2"></i>
+                Language Distribution
+            </h3>
+        </div>
+        <div class="chart-body">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+                    <div class="text-4xl mb-2">🇺🇸</div>
+                    <div class="text-3xl font-bold text-blue-600">{{ stats.language_distribution.en }}</div>
+                    <div class="text-sm text-gray-600 mt-1">English</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        {{ ((stats.language_distribution.en / stats.total_applications * 100)|round(1)) if stats.total_applications > 0 else 0 }}%
+                    </div>
+                </div>
+                <div class="text-center p-6 bg-purple-50 rounded-lg border-2 border-purple-200">
+                    <div class="text-4xl mb-2">🇫🇷</div>
+                    <div class="text-3xl font-bold text-purple-600">{{ stats.language_distribution.fr }}</div>
+                    <div class="text-sm text-gray-600 mt-1">French</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        {{ ((stats.language_distribution.fr / stats.total_applications * 100)|round(1)) if stats.total_applications > 0 else 0 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Companies -->
     <div class="chart-card">
         <div class="chart-header">
-            <h3 class="chart-title">Top Companies (Applications Sent)</h3>
+            <h3 class="chart-title">
+                <i class="fas fa-building text-orange-500 mr-2"></i>
+                Top Companies (Applications)
+            </h3>
         </div>
         <div class="chart-body">
-            <canvas id="companyChart" height="300"></canvas>
+            {% if company_heatmap %}
+            <div class="space-y-3">
+                {% for company in company_heatmap[:5] %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-bold text-sm">{{ company.company[0]|upper }}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">{{ company.company }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-32 bg-gray-200 rounded-full h-2">
+                            {% set max_count = company_heatmap[0].count if company_heatmap else 1 %}
+                            <div class="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full"
+                                 style="width: {{ (company.count / max_count * 100)|round(0) }}%"></div>
+                        </div>
+                        <span class="text-sm font-bold text-gray-900 w-8 text-right">{{ company.count }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-2"></i>
+                <p>No company data yet</p>
+            </div>
+            {% endif %}
         </div>
     </div>
-    
-    <!-- Follow-up Effectiveness -->
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">Follow-up Distribution</h3>
-        </div>
-        <div class="chart-body">
-            <canvas id="followupChart" height="300"></canvas>
+</div>
+
+<!-- Follow-up Effectiveness -->
+<div class="chart-card">
+    <div class="chart-header">
+        <h3 class="chart-title">
+            <i class="fas fa-chart-bar text-teal-500 mr-2"></i>
+            Follow-up Effectiveness
+        </h3>
+    </div>
+    <div class="chart-body">
+        <canvas id="followupChart" height="200"></canvas>
+        <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ followup_data.max_followups }}</p>
+                <p class="text-xs text-gray-600">Max Follow-ups</p>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ followup_data.avg_followups|round(2) }}</p>
+                <p class="text-xs text-gray-600">Avg Follow-ups</p>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ stats.total_followups }}</p>
+                <p class="text-xs text-gray-600">Total Sent</p>
+            </div>
         </div>
     </div>
 </div>
@@ -79,87 +269,164 @@
 {% block scripts %}
 <script>
 // Timeline Chart
-new Chart(document.getElementById('timelineChart'), {
-    type: 'line',
-    data: {
-        labels: {{ timeline.labels | tojson }},
-        datasets: [{
-            label: 'Applications Sent',
-            data: {{ timeline.data | tojson }},
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    }
-});
+const timelineCtx = document.getElementById('timelineChart');
+if (timelineCtx) {
+    new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ timeline.labels | tojson }}.map(d => {
+                const date = new Date(d);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Applications Sent',
+                data: {{ timeline.data | tojson }},
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
 
 // Status Distribution
-const statusData = {{ status_distribution | tojson }};
-new Chart(document.getElementById('statusChart'), {
-    type: 'doughnut',
-    data: {
-        labels: Object.keys(statusData),
-        datasets: [{
-            data: Object.values(statusData),
-            backgroundColor: [
-                'rgb(34, 197, 94)',  // Sent
-                'rgb(251, 191, 36)', // Pending
-                'rgb(239, 68, 68)',  // Bounced
-                'rgb(156, 163, 175)' // Other
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false
-    }
-});
+const statusCtx = document.getElementById('statusChart');
+if (statusCtx) {
+    const statusData = {{ status_distribution | tojson }};
+    const statusLabels = Object.keys(statusData);
+    const statusValues = Object.values(statusData);
 
-// Company Heatmap
-const companies = {{ company_heatmap | tojson }};
-new Chart(document.getElementById('companyChart'), {
-    type: 'bar',
-    data: {
-        labels: companies.map(c => c.company),
-        datasets: [{
-            label: 'Applications',
-            data: companies.map(c => c.count),
-            backgroundColor: 'rgb(168, 85, 247)'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    }
-});
+    // Color mapping for statuses
+    const colorMap = {
+        'Sent': 'rgb(59, 130, 246)',
+        'Follow-up Sent': 'rgb(147, 197, 253)',
+        'Pending': 'rgb(251, 191, 36)',
+        'Call Received': 'rgb(16, 185, 129)',
+        'Interview Scheduled': 'rgb(5, 150, 105)',
+        'Interview Complete': 'rgb(6, 95, 70)',
+        'Offer': 'rgb(217, 119, 6)',
+        'Hired': 'rgb(34, 197, 94)',
+        'Rejected': 'rgb(239, 68, 68)',
+        'Bounced': 'rgb(220, 38, 38)',
+        'Failed': 'rgb(127, 29, 29)'
+    };
+
+    const colors = statusLabels.map(label => colorMap[label] || 'rgb(156, 163, 175)');
+
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusValues,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12 },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            return data.labels.map((label, i) => ({
+                                text: `${label} (${data.datasets[0].data[i]})`,
+                                fillStyle: data.datasets[0].backgroundColor[i],
+                                hidden: false,
+                                index: i
+                            }));
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
 
 // Follow-up Distribution
-const followupDist = {{ followup_data.distribution | tojson }};
-new Chart(document.getElementById('followupChart'), {
-    type: 'bar',
-    data: {
-        labels: Object.keys(followupDist).map(k => k + ' follow-ups'),
-        datasets: [{
-            label: 'Applications',
-            data: Object.values(followupDist),
-            backgroundColor: 'rgb(59, 130, 246)'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    }
-});
+const followupCtx = document.getElementById('followupChart');
+if (followupCtx) {
+    const followupDist = {{ followup_data.distribution | tojson }};
+    const labels = Object.keys(followupDist).sort((a, b) => parseInt(a) - parseInt(b));
+    const data = labels.map(k => followupDist[k]);
+
+    new Chart(followupCtx, {
+        type: 'bar',
+        data: {
+            labels: labels.map(k => k === '0' ? 'No Follow-ups' : `${k} Follow-up${k === '1' ? '' : 's'}`),
+            datasets: [{
+                label: 'Applications',
+                data: data,
+                backgroundColor: 'rgba(20, 184, 166, 0.8)',
+                borderColor: 'rgb(20, 184, 166)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+// Auto-refresh every 60 seconds
+setTimeout(() => {
+    window.location.reload();
+}, 60000);
 </script>
 {% endblock %}
