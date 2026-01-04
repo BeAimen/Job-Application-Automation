@@ -1056,12 +1056,22 @@ async def monitoring_page(request: Request):
 
     try:
         tz_name = settings_manager.get_setting('timezone', 'UTC')
-        # Get real API usage
+
+        # Get real system health
+        health = system_monitor.get_health_status()
+
+        # Get recent events (last 50)
+        recent_events = system_monitor.get_recent_events(50)
+
+        # Get API stats
+        gmail_stats = system_monitor.get_api_stats('gmail', 60)
+        sheets_stats = system_monitor.get_api_stats('sheets', 60)
+
+        # Calculate quota usage (real data)
         apps_en = sheets_client.get_applications_for_followup('en')
         apps_fr = sheets_client.get_applications_for_followup('fr')
         all_apps = apps_en + apps_fr
 
-        # Calculate quota usage (use timezone from settings)
         timezone = settings_manager.get_setting('timezone', 'UTC')
         tz = pytz.timezone(timezone)
         today = datetime.now(tz).date()
@@ -1070,35 +1080,37 @@ async def monitoring_page(request: Request):
                                datetime.fromisoformat(app['sent_date']).date() == today)
 
         gmail_quota_used = sent_today_count
-        gmail_quota_total = 250  # Gmail free tier
+        gmail_quota_total = 250  # Gmail free tier daily limit
         gmail_quota_percent = (gmail_quota_used / gmail_quota_total * 100) if gmail_quota_total > 0 else 0
 
-        # Sheets quota (rough estimate based on operations)
-        sheets_operations_today = sent_today_count * 3  # Each send = ~3 operations
-        sheets_quota_total = 500
+        # Sheets quota (rough estimate: 3 operations per email)
+        sheets_operations_today = sent_today_count * 3
+        sheets_quota_total = 500  # Conservative daily limit
         sheets_quota_percent = (sheets_operations_today / sheets_quota_total * 100) if sheets_quota_total > 0 else 0
+
+        # Format last checked time
+        last_checked = format_timestamp(datetime.now().isoformat(), tz_name)
 
     except Exception as e:
         print(f"Monitoring error: {e}")
+        system_monitor.log_event('monitoring', 'error', f'Error loading monitoring page: {str(e)}')
+
+        # Fallback values
+        health = {
+            'status': 'warning',
+            'message': 'Unable to load system status',
+            'uptime': 'Unknown'
+        }
+        recent_events = []
+        gmail_stats = {'total_calls': 0, 'success_rate': 0, 'avg_duration_ms': 0, 'errors': 0}
+        sheets_stats = {'total_calls': 0, 'success_rate': 0, 'avg_duration_ms': 0, 'errors': 0}
         gmail_quota_used = 0
         gmail_quota_total = 250
         gmail_quota_percent = 0
         sheets_operations_today = 0
         sheets_quota_total = 500
         sheets_quota_percent = 0
-
-    health = system_monitor.get_health_status()
-    recent_events = system_monitor.get_recent_events(50)
-    gmail_stats = system_monitor.get_api_stats('gmail', 60)
-    sheets_stats = system_monitor.get_api_stats('sheets', 60)
-
-    status_messages = {
-        'healthy': 'All services operational',
-        'warning': 'Some warnings detected',
-        'critical': 'Attention required',
-    }
-    status_message = status_messages.get(health.get('status'), 'Status unknown')
-    last_checked = format_timestamp(datetime.now().isoformat(), tz_name)
+        last_checked = format_timestamp(datetime.now().isoformat(), tz_name)
 
     return templates.TemplateResponse(
         "monitoring.html",
@@ -1114,7 +1126,6 @@ async def monitoring_page(request: Request):
             "sheets_quota_used": sheets_operations_today,
             "sheets_quota_total": sheets_quota_total,
             "sheets_quota_percent": round(sheets_quota_percent, 1),
-            "status_message": status_message,
             "last_checked": last_checked
         }
     )

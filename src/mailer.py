@@ -18,6 +18,8 @@ from urllib.parse import quote
 
 from src.config import GMAIL_USER_EMAIL, DEFAULT_DELAY_BETWEEN_EMAILS, MAX_RETRIES
 
+import time as time_module
+from src.monitoring import system_monitor
 
 class GmailMailer:
     """Gmail API wrapper for sending emails with proper authentication headers."""
@@ -47,17 +49,26 @@ class GmailMailer:
     ) -> dict:
         """
         Send an email using Gmail API with proper authentication headers.
-
-        This adds SPF/DKIM-friendly headers to improve deliverability
-        and reduce spam flags.
         """
+        start_time = time_module.time()
+
+        # Log attempt
+        system_monitor.log_event(
+            'email_send_attempt',
+            'info',
+            f'Attempting to send email to {to_email}',
+            {'subject': subject, 'has_attachment': bool(attachment_path)}
+        )
 
         # ----------- VALIDATION -----------
         if not to_email:
+            system_monitor.log_event('email_validation', 'error', 'No recipient email provided')
             raise ValueError("Recipient email is required.")
         if not subject.strip():
+            system_monitor.log_event('email_validation', 'error', 'Empty subject line')
             raise ValueError("Email subject cannot be empty.")
         if not body.strip():
+            system_monitor.log_event('email_validation', 'error', 'Empty email body')
             raise ValueError("Email body cannot be empty.")
 
         # ----------- CREATE MESSAGE WITH PROPER HEADERS -----------
@@ -65,40 +76,20 @@ class GmailMailer:
 
         # ✅ CRITICAL: Proper From header with display name
         message["From"] = formataddr((self.display_name, self.user_email))
-
-        # ✅ To header
         message["To"] = to_email
-
-        # ✅ Subject
         message["Subject"] = subject
-
-        # ✅ AUTHENTICATION HEADERS
-        # These help email providers verify the message is legitimate
         message["Reply-To"] = formataddr((self.display_name, self.user_email))
         message["Return-Path"] = self.user_email
-
-        # ✅ Date header (RFC 2822 format)
         message["Date"] = formatdate(localtime=True)
-
-        # ✅ Message-ID (helps threading and prevents duplicates)
         message["Message-ID"] = make_msgid(domain=self.hostname)
-
-        # ✅ MIME Version
         message["MIME-Version"] = "1.0"
-
-        # ✅ X-Mailer (identifies sender application)
         message["X-Mailer"] = "JobFlow Application Manager v1.0"
-
-        # ✅ X-Priority (normal priority - don't look spammy)
-        message["X-Priority"] = "3"  # 3 = Normal (1=High, 5=Low)
+        message["X-Priority"] = "3"
         message["Priority"] = "normal"
         message["Importance"] = "normal"
-
-        # ✅ Content headers for better parsing
         message["Content-Language"] = "en-US"
 
         # ----------- EMAIL BODY -----------
-        # Use UTF-8 encoding for international characters
         text_part = MIMEText(body, "plain", "utf-8")
         text_part["Content-Transfer-Encoding"] = "quoted-printable"
         message.attach(text_part)
@@ -106,6 +97,11 @@ class GmailMailer:
         # ----------- ATTACHMENTS -----------
         if attachment_path:
             if not attachment_path.exists():
+                system_monitor.log_event(
+                    'email_attachment', 'error',
+                    f'Attachment not found: {attachment_path}',
+                    {'path': str(attachment_path)}
+                )
                 raise ValueError(f"Attachment not found: {attachment_path}")
 
             mime_type, _ = mimetypes.guess_type(str(attachment_path))
@@ -120,7 +116,6 @@ class GmailMailer:
 
             encoders.encode_base64(part)
 
-            # ✅ Proper filename encoding (UTF-8 + RFC 2231)
             filename = attachment_path.name
             encoded_filename = Header(filename, "utf-8").encode()
             part.add_header(
@@ -145,10 +140,46 @@ class GmailMailer:
                 body={"raw": raw_message}
             ).execute()
 
+            # Calculate duration
+            duration_ms = (time_module.time() - start_time) * 1000
+
+            # Log API call success
+            system_monitor.log_api_call('gmail', 'messages.send', True, duration_ms)
+
+            # Log success event
+            system_monitor.log_event(
+                'email_sent',
+                'info',
+                f'Email sent successfully to {to_email}',
+                {
+                    'message_id': result.get('id'),
+                    'subject': subject,
+                    'duration_ms': round(duration_ms, 2)
+                }
+            )
+
             print(f"✅ Email sent successfully to {to_email} (Message ID: {result.get('id')})")
             return result
 
         except Exception as e:
+            # Calculate duration
+            duration_ms = (time_module.time() - start_time) * 1000
+
+            # Log API call failure
+            system_monitor.log_api_call('gmail', 'messages.send', False, duration_ms)
+
+            # Log error event
+            system_monitor.log_event(
+                'email_send_failed',
+                'error',
+                f'Failed to send email to {to_email}',
+                {
+                    'error': str(e),
+                    'subject': subject,
+                    'duration_ms': round(duration_ms, 2)
+                }
+            )
+
             print(f"❌ Failed to send email to {to_email}: {str(e)}")
             raise
 

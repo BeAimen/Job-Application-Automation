@@ -4,21 +4,33 @@
 
 {% block content %}
 <!-- Page Header -->
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">System Monitoring</h1>
-    <p class="text-sm text-gray-500 mt-1">Real-time health and performance metrics</p>
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">System Monitoring</h1>
+        <p class="text-sm text-gray-500 mt-1">Real-time health and performance metrics</p>
+    </div>
+    <button onclick="window.location.reload()" class="btn-secondary">
+        <i class="fas fa-sync-alt mr-2"></i>Refresh
+    </button>
 </div>
 
 <!-- System Health Status -->
 <div class="bg-gradient-to-r from-{% if health.status == 'healthy' %}green{% elif health.status == 'warning' %}yellow{% else %}red{% endif %}-50 to-{% if health.status == 'healthy' %}green{% elif health.status == 'warning' %}yellow{% else %}red{% endif %}-100 border border-{% if health.status == 'healthy' %}green{% elif health.status == 'warning' %}yellow{% else %}red{% endif %}-200 rounded-lg p-6 mb-6">
     <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
-            <div class="w-16 h-16 bg-{% if health.status == 'healthy' %}green{% elif health.status == 'warning' %}yellow{% else %}red{% endif %}-500 rounded-full flex items-center justify-center">
+            <div class="w-16 h-16 bg-{% if health.status == 'healthy' %}green{% elif health.status == 'warning' %}yellow{% else %}red{% endif %}-500 rounded-full flex items-center justify-center animate-pulse">
                 <i class="fas fa-{% if health.status == 'healthy' %}check{% elif health.status == 'warning' %}exclamation-triangle{% else %}times{% endif %} text-white text-2xl"></i>
             </div>
             <div>
-                <h2 class="text-2xl font-bold text-gray-900">System {% if health.status == 'healthy' %}Healthy{% elif health.status == 'warning' %}Warning{% else %}Critical{% endif %}</h2>
-                <p class="text-sm text-gray-600 mt-1">{{ status_message }}</p>
+                <h2 class="text-2xl font-bold text-gray-900">
+                    System {% if health.status == 'healthy' %}Healthy{% elif health.status == 'warning' %}Warning{% else %}Critical{% endif %}
+                </h2>
+                <p class="text-sm text-gray-600 mt-1">{{ health.message }}</p>
+                {% if health.uptime %}
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="fas fa-clock mr-1"></i>Uptime: {{ health.uptime }}
+                </p>
+                {% endif %}
             </div>
         </div>
         <div class="text-right">
@@ -27,6 +39,30 @@
         </div>
     </div>
 </div>
+
+<!-- Recent Issues Alert -->
+{% if health.recent_errors > 0 or health.recent_warnings > 0 %}
+<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-yellow-700">
+                Recent activity: 
+                {% if health.recent_errors > 0 %}
+                <span class="font-semibold">{{ health.recent_errors }} error{{ 's' if health.recent_errors != 1 else '' }}</span>
+                {% endif %}
+                {% if health.recent_errors > 0 and health.recent_warnings > 0 %} and {% endif %}
+                {% if health.recent_warnings > 0 %}
+                <span class="font-semibold">{{ health.recent_warnings }} warning{{ 's' if health.recent_warnings != 1 else '' }}</span>
+                {% endif %}
+                detected in the last 100 events.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- API Health Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -37,7 +73,7 @@
                 <i class="fas fa-envelope text-red-500 mr-2"></i>
                 Gmail API
             </h3>
-            <span class="text-sm px-3 py-1 rounded-full {% if gmail_stats.success_rate >= 95 %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            <span class="text-sm px-3 py-1 rounded-full {% if gmail_stats.success_rate >= 95 %}bg-green-100 text-green-700{% elif gmail_stats.success_rate >= 80 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
                 {{ gmail_stats.success_rate|round(1) }}% success
             </span>
         </div>
@@ -53,18 +89,27 @@
             </div>
             <div class="flex justify-between">
                 <span class="text-sm text-gray-600">Errors</span>
-                <span class="text-sm font-medium text-red-600">{{ gmail_stats.errors }}</span>
+                <span class="text-sm font-medium {% if gmail_stats.errors > 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                    {{ gmail_stats.errors }}
+                </span>
             </div>
         </div>
         
         <div class="mt-4 pt-4 border-t border-gray-200">
             <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>Quota Usage (Today)</span>
+                <span>Daily Quota Usage</span>
                 <span>{{ gmail_quota_used }} / {{ gmail_quota_total }}</span>
             </div>
             <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-blue-500 h-2 rounded-full" style="width: {{ gmail_quota_percent|round(1) }}%"></div>
+                <div class="{% if gmail_quota_percent < 70 %}bg-blue-500{% elif gmail_quota_percent < 90 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2 rounded-full transition-all duration-300" 
+                     style="width: {{ gmail_quota_percent|round(1) }}%"></div>
             </div>
+            {% if gmail_quota_percent > 80 %}
+            <p class="text-xs text-yellow-600 mt-1">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                High quota usage - consider spacing out emails
+            </p>
+            {% endif %}
         </div>
     </div>
 
@@ -75,7 +120,7 @@
                 <i class="fas fa-table text-green-500 mr-2"></i>
                 Sheets API
             </h3>
-            <span class="text-sm px-3 py-1 rounded-full {% if sheets_stats.success_rate >= 95 %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            <span class="text-sm px-3 py-1 rounded-full {% if sheets_stats.success_rate >= 95 %}bg-green-100 text-green-700{% elif sheets_stats.success_rate >= 80 %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
                 {{ sheets_stats.success_rate|round(1) }}% success
             </span>
         </div>
@@ -91,7 +136,9 @@
             </div>
             <div class="flex justify-between">
                 <span class="text-sm text-gray-600">Errors</span>
-                <span class="text-sm font-medium text-red-600">{{ sheets_stats.errors }}</span>
+                <span class="text-sm font-medium {% if sheets_stats.errors > 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                    {{ sheets_stats.errors }}
+                </span>
             </div>
         </div>
 
@@ -101,7 +148,8 @@
                 <span>{{ sheets_quota_used }} / {{ sheets_quota_total }}</span>
             </div>
             <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-green-500 h-2 rounded-full" style="width: {{ sheets_quota_percent|round(1) }}%"></div>
+                <div class="{% if sheets_quota_percent < 70 %}bg-green-500{% elif sheets_quota_percent < 90 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2 rounded-full transition-all duration-300" 
+                     style="width: {{ sheets_quota_percent|round(1) }}%"></div>
             </div>
         </div>
     </div>
@@ -114,12 +162,24 @@
             <i class="fas fa-list text-gray-500 mr-2"></i>
             Event Log
         </h3>
+        <div class="flex items-center space-x-2">
+            <select id="severityFilter" onchange="filterEvents()" class="text-sm border-gray-300 rounded-lg">
+                <option value="">All Severities</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+                <option value="critical">Critical</option>
+            </select>
+            <button onclick="window.location.reload()" class="text-sm text-blue-600 hover:text-blue-700">
+                <i class="fas fa-sync-alt mr-1"></i>Refresh
+            </button>
+        </div>
     </div>
 
-    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto" id="eventLog">
         {% if events %}
         {% for event in events %}
-        <div class="p-4 hover:bg-gray-50 transition-colors">
+        <div class="p-4 hover:bg-gray-50 transition-colors event-row" data-severity="{{ event.severity }}">
             <div class="flex items-start space-x-3">
                 <div class="flex-shrink-0 mt-1">
                     {% if event.severity == 'error' or event.severity == 'critical' %}
@@ -131,8 +191,28 @@
                     {% endif %}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900">{{ event.message }}</p>
-                    <p class="text-xs text-gray-500 mt-1">{{ event.type }} • {{ event.timestamp[:19] }}</p>
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-gray-900">{{ event.message }}</p>
+                        <span class="text-xs px-2 py-1 rounded-full font-semibold
+                            {% if event.severity == 'critical' %}bg-red-100 text-red-700
+                            {% elif event.severity == 'error' %}bg-red-50 text-red-600
+                            {% elif event.severity == 'warning' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ event.severity|upper }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span class="font-medium">{{ event.type }}</span> • 
+                        {{ event.timestamp[:19] }}
+                    </p>
+                    {% if event.details %}
+                    <details class="mt-2">
+                        <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-700">
+                            Show details
+                        </summary>
+                        <pre class="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-200 overflow-x-auto">{{ event.details|tojson(indent=2) }}</pre>
+                    </details>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -140,9 +220,30 @@
         {% else %}
         <div class="p-8 text-center text-gray-500">
             <i class="fas fa-clipboard-check text-4xl mb-2"></i>
-            <p>No recent events</p>
+            <p>No events logged yet</p>
+            <p class="text-xs mt-2">Events will appear here as the system processes applications</p>
         </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+function filterEvents() {
+    const severity = document.getElementById('severityFilter').value;
+    const rows = document.querySelectorAll('.event-row');
+    
+    rows.forEach(row => {
+        if (!severity || row.dataset.severity === severity) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Auto-refresh every 30 seconds
+setTimeout(() => {
+    window.location.reload();
+}, 30000);
+</script>
 {% endblock %}

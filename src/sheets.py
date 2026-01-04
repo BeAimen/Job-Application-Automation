@@ -7,6 +7,10 @@ from src.utils import (
     get_default_company, get_default_position
 )
 
+# Add to the top of src/sheets.py after imports:
+import time as time_module
+from src.monitoring import system_monitor
+
 
 APPLICATION_COLUMNS = [
     'ID', 'Company', 'Email', 'Position', 'Status', 'Sent Date',
@@ -32,6 +36,36 @@ class SheetsClient:
         self.service = service
         self.spreadsheet_id = SPREADSHEET_ID
 
+    # Add these wrapper methods to track API calls:
+    def _execute_sheets_api(self, operation_name: str, api_call):
+        """Execute a Sheets API call with monitoring."""
+        start_time = time_module.time()
+
+        try:
+            result = api_call()
+            duration_ms = (time_module.time() - start_time) * 1000
+
+            # Log successful API call
+            system_monitor.log_api_call('sheets', operation_name, True, duration_ms)
+
+            return result
+
+        except Exception as e:
+            duration_ms = (time_module.time() - start_time) * 1000
+
+            # Log failed API call
+            system_monitor.log_api_call('sheets', operation_name, False, duration_ms)
+
+            # Log error event
+            system_monitor.log_event(
+                'sheets_api_error',
+                'error',
+                f'Sheets API error in {operation_name}',
+                {'error': str(e), 'duration_ms': round(duration_ms, 2)}
+            )
+
+            raise
+
     # ---------------------------------------------------------
     # SHEET SETUP
     # ---------------------------------------------------------
@@ -49,21 +83,27 @@ class SheetsClient:
     def _ensure_headers(self, sheet_name: str, headers: List[str]):
         """Ensure sheet contains the correct header row."""
         try:
-            result = self.service.spreadsheets().values().get(
-                spreadsheetId=self.spreadsheet_id,
-                range=f"{sheet_name}!A1:Z1"
-            ).execute()
+            result = self._execute_sheets_api(
+                'get_headers',
+                lambda: self.service.spreadsheets().values().get(
+                    spreadsheetId=self.spreadsheet_id,
+                    range=f"{sheet_name}!A1:Z1"
+                ).execute()
+            )
 
             existing = result.get("values", [[]])
             existing_headers = existing[0] if existing else []
 
             if existing_headers != headers:
-                self.service.spreadsheets().values().update(
-                    spreadsheetId=self.spreadsheet_id,
-                    range=f"{sheet_name}!A1",
-                    valueInputOption="RAW",
-                    body={"values": [headers]}
-                ).execute()
+                self._execute_sheets_api(
+                    'update_headers',
+                    lambda: self.service.spreadsheets().values().update(
+                        spreadsheetId=self.spreadsheet_id,
+                        range=f"{sheet_name}!A1",
+                        valueInputOption="RAW",
+                        body={"values": [headers]}
+                    ).execute()
+                )
 
         except Exception as e:
             print(f"[ERROR] Failed to ensure headers for {sheet_name}: {e}")
@@ -89,6 +129,13 @@ class SheetsClient:
         reference: Optional[str] = None  # NEW
     ) -> str:
         """Insert a new application row and return the application ID."""
+
+        system_monitor.log_event(
+            'application_created',
+            'info',
+            f'Creating application for {email}',
+            {'language': language, 'company': company}
+        )
 
         sheet_name = self._get_sheet_name(language)
         app_id = generate_id()
@@ -116,13 +163,24 @@ class SheetsClient:
             reference or ""  # NEW
         ]
 
-        self.service.spreadsheets().values().append(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A:Q",  # Updated range to include new columns
-            valueInputOption="RAW",
-            insertDataOption="INSERT_ROWS",
-            body={"values": [row]}
-        ).execute()
+        # Use monitored API call
+        self._execute_sheets_api(
+            'append_row',
+            lambda: self.service.spreadsheets().values().append(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!A:Q",  # Updated range to include new columns
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": [row]}
+            ).execute()
+        )
+
+        system_monitor.log_event(
+            'application_added',
+            'info',
+            f'Application added successfully',
+            {'app_id': app_id, 'email': email, 'language': language}
+        )
 
         return app_id
 
@@ -148,10 +206,13 @@ class SheetsClient:
             {"range": f"{sheet_name}!L{row_index}", "values": [[cv_filename]]},
         ]
 
-        self.service.spreadsheets().values().batchUpdate(
-            spreadsheetId=self.spreadsheet_id,
-            body={"data": updates, "valueInputOption": "RAW"}
-        ).execute()
+        self._execute_sheets_api(
+            'batch_update_application_sent',
+            lambda: self.service.spreadsheets().values().batchUpdate(
+                spreadsheetId=self.spreadsheet_id,
+                body={"data": updates, "valueInputOption": "RAW"}
+            ).execute()
+        )
 
     # ---------------------------------------------------------
     # UPDATE FOLLOW-UP
@@ -173,10 +234,13 @@ class SheetsClient:
             {"range": f"{sheet_name}!E{row_index}", "values": [["Follow-up Sent"]]},
         ]
 
-        self.service.spreadsheets().values().batchUpdate(
-            spreadsheetId=self.spreadsheet_id,
-            body={"data": updates, "valueInputOption": "RAW"}
-        ).execute()
+        self._execute_sheets_api(
+            'batch_update_application_followup',
+            lambda: self.service.spreadsheets().values().batchUpdate(
+                spreadsheetId=self.spreadsheet_id,
+                body={"data": updates, "valueInputOption": "RAW"}
+            ).execute()
+        )
 
     # ---------------------------------------------------------
     # STATUS UPDATE
@@ -189,12 +253,15 @@ class SheetsClient:
         if not row_index:
             raise ValueError(f"Application ID {app_id} not found")
 
-        self.service.spreadsheets().values().update(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!E{row_index}",
-            valueInputOption="RAW",
-            body={"values": [[status]]}
-        ).execute()
+        self._execute_sheets_api(
+            'update_application_status',
+            lambda: self.service.spreadsheets().values().update(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!E{row_index}",
+                valueInputOption="RAW",
+                body={"values": [[status]]}
+            ).execute()
+        )
 
     # ---------------------------------------------------------
     # RETRIEVE FOLLOWUP-DUE APPLICATIONS (UPDATED)
@@ -203,10 +270,13 @@ class SheetsClient:
         """Return applications that require follow-up."""
         sheet_name = self._get_sheet_name(language)
 
-        result = self.service.spreadsheets().values().get(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A2:Q"  # Updated range
-        ).execute()
+        result = self._execute_sheets_api(
+            'get_applications_for_followup',
+            lambda: self.service.spreadsheets().values().get(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!A2:Q"  # Updated range
+            ).execute()
+        )
 
         rows = result.get("values", [])
         applications = []
@@ -257,13 +327,16 @@ class SheetsClient:
 
         row = [timestamp, app_id, email, action, result, details]
 
-        self.service.spreadsheets().values().append(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{SHEET_ACTIVITY}!A:F",
-            valueInputOption="RAW",
-            insertDataOption="INSERT_ROWS",
-            body={"values": [row]}
-        ).execute()
+        self._execute_sheets_api(
+            'append_activity_log',
+            lambda: self.service.spreadsheets().values().append(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{SHEET_ACTIVITY}!A:F",
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": [row]}
+            ).execute()
+        )
 
     # ---------------------------------------------------------
     # LOOKUP HELPERS (UPDATED)
@@ -272,10 +345,13 @@ class SheetsClient:
         """Return full application details for a given ID."""
         sheet_name = self._get_sheet_name(language)
 
-        result = self.service.spreadsheets().values().get(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A2:Q"  # Updated range
-        ).execute()
+        result = self._execute_sheets_api(
+            'get_application_by_id',
+            lambda: self.service.spreadsheets().values().get(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!A2:Q"  # Updated range
+            ).execute()
+        )
 
         for row in result.get("values", []):
             if row and row[0] == app_id:
@@ -304,10 +380,13 @@ class SheetsClient:
 
     def _find_row_by_id(self, sheet_name: str, app_id: str) -> Optional[int]:
         """Find row index (1-based) for a given ID."""
-        result = self.service.spreadsheets().values().get(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A:A"
-        ).execute()
+        result = self._execute_sheets_api(
+            'find_row_by_id',
+            lambda: self.service.spreadsheets().values().get(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!A:A"
+            ).execute()
+        )
 
         for i, row in enumerate(result.get("values", []), start=1):
             if row and row[0] == app_id:
@@ -319,10 +398,13 @@ class SheetsClient:
         """Return content of a given cell (1-indexed)."""
         col_letter = chr(64 + col)  # 1 = A, 2 = B, ...
 
-        result = self.service.spreadsheets().values().get(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!{col_letter}{row}"
-        ).execute()
+        result = self._execute_sheets_api(
+            'get_cell_value',
+            lambda: self.service.spreadsheets().values().get(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!{col_letter}{row}"
+            ).execute()
+        )
 
         values = result.get("values", [])
         return values[0][0] if values and values[0] else ""
@@ -331,10 +413,13 @@ class SheetsClient:
         """Find an application by recipient email (case-insensitive)."""
         sheet_name = self._get_sheet_name(language)
 
-        result = self.service.spreadsheets().values().get(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{sheet_name}!A2:Q"
-        ).execute()
+        result = self._execute_sheets_api(
+            'find_application_by_email',
+            lambda: self.service.spreadsheets().values().get(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{sheet_name}!A2:Q"
+            ).execute()
+        )
 
         rows = result.get("values", [])
         for idx, row in enumerate(rows, start=2):
@@ -389,10 +474,13 @@ class SheetsClient:
             updates.append({"range": f"{sheet_name}!Q{row_index}", "values": [[reference]]})
 
         if updates:
-            self.service.spreadsheets().values().batchUpdate(
-                spreadsheetId=self.spreadsheet_id,
-                body={"data": updates, "valueInputOption": "RAW"}
-            ).execute()
+            self._execute_sheets_api(
+                'update_application_fields',
+                lambda: self.service.spreadsheets().values().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id,
+                    body={"data": updates, "valueInputOption": "RAW"}
+                ).execute()
+            )
 
         return True
 
@@ -431,23 +519,29 @@ class SheetsClient:
             added_date  # Last Updated
         ]
 
-        self.service.spreadsheets().values().append(
-            spreadsheetId=self.spreadsheet_id,
-            range=f"{SHEET_COMPANIES}!A:L",
-            valueInputOption="RAW",
-            insertDataOption="INSERT_ROWS",
-            body={"values": [row]}
-        ).execute()
+        self._execute_sheets_api(
+            'add_company',
+            lambda: self.service.spreadsheets().values().append(
+                spreadsheetId=self.spreadsheet_id,
+                range=f"{SHEET_COMPANIES}!A:L",
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": [row]}
+            ).execute()
+        )
 
         return company_id
 
     def get_all_companies(self) -> List[Dict[str, Any]]:
         """Get all companies from the Companies sheet."""
         try:
-            result = self.service.spreadsheets().values().get(
-                spreadsheetId=self.spreadsheet_id,
-                range=f"{SHEET_COMPANIES}!A2:L"
-            ).execute()
+            result = self._execute_sheets_api(
+                'get_all_companies',
+                lambda: self.service.spreadsheets().values().get(
+                    spreadsheetId=self.spreadsheet_id,
+                    range=f"{SHEET_COMPANIES}!A2:L"
+                ).execute()
+            )
 
             rows = result.get("values", [])
             companies = []
@@ -542,10 +636,13 @@ class SheetsClient:
         updates.append({"range": f"{SHEET_COMPANIES}!L{row_index}", "values": [[last_updated]]})
 
         if updates:
-            self.service.spreadsheets().values().batchUpdate(
-                spreadsheetId=self.spreadsheet_id,
-                body={"data": updates, "valueInputOption": "RAW"}
-            ).execute()
+            self._execute_sheets_api(
+                'update_company',
+                lambda: self.service.spreadsheets().values().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id,
+                    body={"data": updates, "valueInputOption": "RAW"}
+                ).execute()
+            )
 
         return True
 
@@ -610,9 +707,12 @@ class SheetsClient:
             return False
 
         # Get sheetId dynamically
-        spreadsheet = self.service.spreadsheets().get(
-            spreadsheetId=self.spreadsheet_id
-        ).execute()
+        spreadsheet = self._execute_sheets_api(
+            'get_spreadsheet',
+            lambda: self.service.spreadsheets().get(
+                spreadsheetId=self.spreadsheet_id
+            ).execute()
+        )
 
         sheet_id = None
         for sheet in spreadsheet["sheets"]:
@@ -623,20 +723,23 @@ class SheetsClient:
         if sheet_id is None:
             return False
 
-        self.service.spreadsheets().batchUpdate(
-            spreadsheetId=self.spreadsheet_id,
-            body={
-                "requests": [{
-                    "deleteDimension": {
-                        "range": {
-                            "sheetId": sheet_id,
-                            "dimension": "ROWS",
-                            "startIndex": row_index - 1,
-                            "endIndex": row_index
+        self._execute_sheets_api(
+            'delete_company_row',
+            lambda: self.service.spreadsheets().batchUpdate(
+                spreadsheetId=self.spreadsheet_id,
+                body={
+                    "requests": [{
+                        "deleteDimension": {
+                            "range": {
+                                "sheetId": sheet_id,
+                                "dimension": "ROWS",
+                                "startIndex": row_index - 1,
+                                "endIndex": row_index
+                            }
                         }
-                    }
-                }]
-            }
-        ).execute()
+                    }]
+                }
+            ).execute()
+        )
 
         return True
